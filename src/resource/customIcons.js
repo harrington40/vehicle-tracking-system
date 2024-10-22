@@ -2,7 +2,7 @@ import L from 'leaflet';
 
 // Define a custom icon for car
 export const carIcon = new L.Icon({
-  iconUrl: '/path/to/car-icon.png', // Replace with actual path
+  iconUrl: '/icons/car.svg', // Replace with actual path
   iconSize: [32, 32], // Icon size
   iconAnchor: [16, 32], // Anchor point to position the icon on the map
 });

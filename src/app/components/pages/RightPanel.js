@@ -37,7 +37,8 @@ const cardStyle = {
 
 const iconStyle = {
   cursor: 'pointer',
-  fontSize: '24px',
+  width: '24px',   // Adjust size based on your image
+  height: '24px',  // Adjust size based on your image
 };
 
 const cardTextStyle = {
@@ -45,7 +46,7 @@ const cardTextStyle = {
   fontWeight: 'bold',
 };
 
-const RightPanel = () => {
+const RightPanel = ({ activateGeofence }) => {
   const [isSidebarExpanded, setIsSidebarExpanded] = useState(false);
 
   const toggleSidebar = () => {
@@ -72,6 +73,12 @@ const RightPanel = () => {
 
       {/* Sidebar Menu Items as Cards */}
       <div style={{ flex: 1, width: '100%', padding: '10px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+        {/* Geofence - Using custom image */}
+        <div style={cardStyle} onClick={activateGeofence}> {/* Geofence activated on click */}
+          <img src="/icons/geo-fencing-icon.png" alt="Geofence Icon" style={iconStyle} />
+          {isSidebarExpanded && <span style={cardTextStyle}>Geofence</span>}
+        </div>
+
         {/* Tracking */}
         <div style={cardStyle}>
           <i className="fa fa-globe" style={iconStyle}></i>
