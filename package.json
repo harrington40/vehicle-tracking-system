@@ -9,6 +9,12 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@loopback/authentication": "^11.0.7",
+    "@loopback/authentication-jwt": "^0.15.7",
+    "@loopback/authorization": "^0.15.7",
+    "axios": "^1.7.7",
+    "cors": "^2.8.5",
+    "jsbarcode": "^3.11.6",
     "leaflet": "^1.9.4",
     "leaflet-draw": "^1.0.4",
     "next": "14.2.15",
@@ -16,7 +22,9 @@
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-leaflet": "^4.2.1",
-    "react-leaflet-draw": "^0.20.4"
+    "react-leaflet-draw": "^0.20.4",
+    "react-qrcode-logo": "^3.0.0",
+    "react-router-dom": "^6.27.0"
   },
   "devDependencies": {
     "eslint": "^8",
