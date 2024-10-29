@@ -1,4 +1,4 @@
-import {inject} from '@loopback/context';
+import { inject } from '@loopback/context';
 import {
   FindRoute,
   InvokeMethod,
@@ -9,7 +9,7 @@ import {
   Send,
   SequenceHandler,
 } from '@loopback/rest';
-import {AuthenticationBindings, AuthenticateFn} from '@loopback/authentication';
+import { AuthenticationBindings, AuthenticateFn } from '@loopback/authentication';
 
 const SequenceActions = RestBindings.SequenceActions;
 
@@ -22,11 +22,11 @@ export class MySequence implements SequenceHandler {
     @inject(SequenceActions.REJECT) public reject: Reject,
     // inject AUTH_ACTION
     @inject(AuthenticationBindings.AUTH_ACTION) private authenticateRequest: AuthenticateFn,
-  ) {}
+  ) { }
 
   async handle(context: RequestContext) {
     try {
-      const {request, response} = context;
+      const { request, response } = context;
       const route = this.findRoute(request);
       // call
       await this.authenticateRequest(request);
@@ -34,7 +34,7 @@ export class MySequence implements SequenceHandler {
       const result = await this.invoke(route, args);
       this.send(response, result);
     } catch (err) {
-      this.reject(context, err);
+      this.reject(context, err as Error);
     }
   }
 }
