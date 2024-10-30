@@ -1,0 +1,10 @@
+{
+  "name": "rethinkdb",
+  "connector": "rethinkdb",
+  "host": "localhost",
+  "port": 28015,
+  "database": "vehicleMS",
+  "username": "", 
+  "password": "", 
+  "indexOption": {}
+}

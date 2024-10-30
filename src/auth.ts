@@ -29,10 +29,10 @@ import * as dotenv from 'dotenv';
 dotenv.config(); // Load environment variables
 
 export const JWT_STRATEGY_NAME = 'jwt';
-export const JWT_SECRET = process.env.JWT_SECRET || 'defaultSecret'; // Ensure a secure value for production
-export const JWT_EXPIRATION = process.env.JWT_EXPIRATION || '1h'; // Set expiration from env
+export const JWT_SECRET = process.env.JWT_SECRET || 'defaultSecret';
+export const JWT_EXPIRATION = process.env.JWT_EXPIRATION || '1h';
 
-// The decorator function for secured access control
+// Decorator function for secured access control
 export function secured(
   type: SecuredType = SecuredType.IS_AUTHENTICATED,
   roles: string[] = [],
@@ -68,13 +68,14 @@ export class MyAuthMetadataProvider extends AuthMetadataProvider {
     super(_controllerClass, _methodName);
   }
 
-  value(): MyAuthenticationMetadata | undefined {
+  value(): AuthenticationMetadata[] | undefined {
     if (!this._controllerClass || !this._methodName) return;
-    return MetadataInspector.getMethodMetadata<MyAuthenticationMetadata>(
+    const metadata = MetadataInspector.getMethodMetadata<MyAuthenticationMetadata>(
       AUTHENTICATION_METADATA_KEY,
       this._controllerClass.prototype,
       this._methodName,
     );
+    return metadata ? [metadata] : undefined;
   }
 }
 
@@ -177,8 +178,11 @@ export class MyAuthActionProvider implements Provider<AuthenticateFn> {
     if (!strategy) return;
 
     const user = await strategy.authenticate(request);
-    if (user) this.setCurrentUser(user);
 
-    return user;
+    if (user && 'name' in user && 'email' in user) {
+      this.setCurrentUser(user as UserProfile);
+    }
+
+    return user as UserProfile | undefined;
   }
 }

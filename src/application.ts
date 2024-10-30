@@ -9,8 +9,10 @@ import { MySequence } from './sequence';
 import { AuthenticationBindings } from '@loopback/authentication';
 import { MyAuthMetadataProvider, MyAuthAuthenticationStrategyProvider, MyAuthActionProvider, MyAuthBindings } from './auth';
 import { UserRepository, RoleRepository, UserRoleRepository } from './repositories';
+import { RethinkDBDataSource } from './datasources/rethinkdb.datasource';
 
-export class Lb4JwtRoleBasedAuthSampleApplication extends BootMixin(ServiceMixin(RepositoryMixin(RestApplication))) {
+
+export class Lb4JwtRoleBasedAuthSampleApplication extends BootMixin(ServiceMixin(RepositoryMixin(RestApplication))) implements RestApplication {
   constructor(options: ApplicationConfig = {}) {
     super(options);
 
@@ -41,6 +43,9 @@ export class Lb4JwtRoleBasedAuthSampleApplication extends BootMixin(ServiceMixin
         nested: true,
       },
     };
+
+    // Register RethinkDB datasource
+    this.dataSource(RethinkDBDataSource, 'rethinkdb');
   }
 
   async seedData() {

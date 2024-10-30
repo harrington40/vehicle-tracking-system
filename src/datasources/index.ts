@@ -1,1 +1,1 @@
-export * from './mem.datasource';
+export * from './rethinkdb.datasource';
