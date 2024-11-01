@@ -9,6 +9,8 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@grpc/grpc-js": "^1.12.2",
+    "@grpc/proto-loader": "^0.7.13",
     "@loopback/authentication": "^11.0.7",
     "@loopback/authentication-jwt": "^0.15.7",
     "@loopback/authorization": "^0.15.7",

@@ -50,7 +50,7 @@ const LoginModal = ({ isOpen, onClose, onSubmit, setTimerVisible }) => {
   
     try {
       // Make a request to the backend login endpoint
-      const response = await axios.post('http://127.0.0.2:3022/users', {
+      const response = await axios.post('NEXT_PUBLIC_API_URL/users/login', {
         email,
         password,
       });

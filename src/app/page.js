@@ -1,10 +1,11 @@
 "use client"; // Add this line at the top to mark this as a client-side component
 
-"use client"; // Ensures this component is client-side
+
 
 import Head from 'next/head';
 import '../../src/app/globals.css';
 import LoginComponent from './components/pages/LoginComponent'; // Import the LoginComponent
+import CreateAccountModal from './components/pages/CreateAccountModal';
 
 export default function HomePage() {
   return (
@@ -18,6 +19,7 @@ export default function HomePage() {
 
       {/* Render only the LoginComponent */}
       <LoginComponent />
+      <CreateAccountModal/>
     </div>
   );
 }

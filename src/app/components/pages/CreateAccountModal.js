@@ -1,5 +1,5 @@
 "use client"; // Ensure client-side component
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import axios from 'axios';
 import bcrypt from 'bcryptjs'; // Import bcryptjs for password hashing
 
@@ -7,14 +7,19 @@ const CreateAccountModal = ({ isOpen, onClose, onSubmit }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [country, setCountry] = useState('');
-  const [city, setCity] = useState('');
-  const [areaCode, setAreaCode] = useState('');
-  const [countryCode, setCountryCode] = useState('');
-  const [phoneNumber, setPhoneNumber] = useState('');
-  const [role, setRole] = useState('user'); // Default to 'user'
   const [errorMessage, setErrorMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
+  const [attempts, setAttempts] = useState(0);
+  const [lockoutTime, setLockoutTime] = useState(0);
+
+  // Check if modal should be locked
+  useEffect(() => {
+    if (lockoutTime > 0) {
+      const timer = setTimeout(() => setLockoutTime(0), lockoutTime * 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [lockoutTime]);
 
   if (!isOpen) {
     return null; // Don't render the modal if it's not open
@@ -23,47 +28,59 @@ const CreateAccountModal = ({ isOpen, onClose, onSubmit }) => {
   // Handle form submission
   const handleSubmit = async (event) => {
     event.preventDefault();
+    if (lockoutTime > 0) return; // Exit if modal is locked
+  
     setIsSubmitting(true);
-
+    setErrorMessage('');
+    setSuccessMessage('');
+  
     // Validate that passwords match
     if (password !== confirmPassword) {
       setErrorMessage('Passwords do not match');
       setIsSubmitting(false);
       return;
     }
-
+  
     // Hash the password before sending it to the backend
-    const salt = bcrypt.genSaltSync(10); // Generate salt
-    const hashedPassword = bcrypt.hashSync(password, salt); // Hash the password
-
+    const salt = bcrypt.genSaltSync(10);
+    const hashedPassword = bcrypt.hashSync(password, salt);
+  
     // Gather form data
     const formData = {
       email,
-      password: hashedPassword, // Use the hashed password
-      country,
-      city,
-      areaCode,
-      countryCode,
-      phoneNumber,
-      role,
+      password: hashedPassword,
     };
-
+  
     try {
-      const response = await axios.post('http://127.0.0.2:3022/users', formData);
+      const response = await axios.post('http://localhost:3002/vehicles', formData);
+
       console.log('Response:', response);
       onSubmit(response.data); // Pass user data to parent
-      onClose(); // Close the modal
+  
+      // Show success message and close modal after delay
+      setSuccessMessage('Thank you! Account created successfully.');
+      setTimeout(() => {
+        setSuccessMessage('');
+        onClose();
+        setAttempts(0); // Reset attempts on success
+      }, 2000);
     } catch (error) {
       console.error('Error creating account:', error.response ? error.response.data : error.message);
-      if (error.response?.data?.details) {
-        console.error('Validation errors:', error.response.data.details);
-      }
       setErrorMessage('Error creating account. Please check the form and try again.');
+  
+      // Increment failed attempts and apply lockout if needed
+      setAttempts((prev) => prev + 1);
+      if (attempts >= 2) {
+        const nextLockoutTime = attempts === 2 ? 180 : attempts === 3 ? 300 : 600;
+        setLockoutTime(nextLockoutTime);
+        setErrorMessage(`Too many attempts. Please try again in ${nextLockoutTime / 60} minutes.`);
+        setAttempts(0); // Reset attempts after lockout
+      }
     } finally {
       setIsSubmitting(false);
     }
   };
-
+  
   return (
     <div className="modal">
       <div className="modal-content">
@@ -93,46 +110,15 @@ const CreateAccountModal = ({ isOpen, onClose, onSubmit }) => {
           required
         />
 
-        <input
-          type="text"
-          placeholder="Enter Country"
-          value={country}
-          onChange={(e) => setCountry(e.target.value)}
-          className="modal-input"
-        />
-        <input
-          type="text"
-          placeholder="Enter City"
-          value={city}
-          onChange={(e) => setCity(e.target.value)}
-          className="modal-input"
-        />
-        <input
-          type="text"
-          placeholder="Enter Area Code"
-          value={areaCode}
-          onChange={(e) => setAreaCode(e.target.value)}
-          className="modal-input"
-        />
-        <input
-          type="text"
-          placeholder="Enter Country Code"
-          value={countryCode}
-          onChange={(e) => setCountryCode(e.target.value)}
-          className="modal-input"
-        />
-        <input
-          type="text"
-          placeholder="Enter Phone Number"
-          value={phoneNumber}
-          onChange={(e) => setPhoneNumber(e.target.value)}
-          className="modal-input"
-        />
-
         {errorMessage && <p className="error-message">{errorMessage}</p>}
+        {successMessage && <p className="success-message">{successMessage}</p>}
 
         <div className="modal-button-group">
-          <button onClick={handleSubmit} className="modal-button" disabled={isSubmitting}>
+          <button 
+            onClick={handleSubmit} 
+            className={`modal-button ${isSubmitting ? 'submitting' : ''}`} 
+            disabled={isSubmitting || lockoutTime > 0}
+          >
             {isSubmitting ? 'Submitting...' : 'Submit'}
           </button>
           <button onClick={onClose} className="modal-button">
@@ -186,10 +172,25 @@ const CreateAccountModal = ({ isOpen, onClose, onSubmit }) => {
           cursor: pointer;
           background-color: #4a90e2;
           color: white;
+          transition: background-color 0.2s;
+        }
+
+        .modal-button:active {
+          background-color: #3b78c0;
+        }
+
+        .submitting {
+          background-color: #888;
+          cursor: not-allowed;
         }
 
         .error-message {
           color: red;
+          font-size: 14px;
+        }
+
+        .success-message {
+          color: green;
           font-size: 14px;
         }
       `}</style>
