@@ -1,0 +1,56 @@
+syntax = "proto3";
+
+package mypackage;
+
+// Existing services for vehicle data retrieval
+service MyService {
+  rpc GetVehicleByMake (VehicleRequest) returns (VehicleResponse);
+  rpc GetVehicleById (VehicleIdRequest) returns (VehicleResponse);
+}
+
+// New service for user authentication
+service AuthService {
+  rpc GetUser (UserRequest) returns (UserResponse); // RPC method to fetch user details by email
+}
+
+// Message types for vehicle data retrieval
+message VehicleRequest {
+  string make = 1;
+}
+
+message VehicleIdRequest {
+  string id = 1;
+}
+
+message VehicleResponse {
+  repeated Vehicle vehicles = 1;
+}
+
+message Vehicle {
+  string id = 1;
+  string make = 2;
+  string model = 3;
+  VehicleOwner owner = 4;
+  string registeredDate = 5;
+  string status = 6;
+  string vin = 7;
+  int32 year = 8;
+}
+
+message VehicleOwner {
+  string contact = 1;
+  string name = 2;
+  string phone = 3;
+}
+
+// New message types for user authentication
+message UserRequest {
+  string email = 1; // Field for the user's email
+}
+
+message UserResponse {
+  string id = 1; // User ID
+  string name = 2; // User's name
+  string email = 3; // User's email
+  string password = 4; // User's hashed password
+}

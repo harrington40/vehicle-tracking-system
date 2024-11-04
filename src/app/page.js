@@ -1,101 +1,185 @@
-import Image from "next/image";
+'use client'; // Indicate this is a client-side component
 
-export default function Home() {
+import { useEffect, useState } from 'react';
+import axios from 'axios';
+import '../app/page.css'; // Assuming you have a CSS file for styling
+
+const HomePage = () => {
+  // State to hold the list of vehicles, user information, and any errors
+  const [vehicles, setVehicles] = useState([]);
+  const [error, setError] = useState(null);
+  const [showLogin, setShowLogin] = useState(true); // Toggle between login and registration
+
+  // State for login form
+  const [loginEmail, setLoginEmail] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
+  const [loginError, setLoginError] = useState(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  // State for registration form
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [registerError, setRegisterError] = useState(null);
+  const [registerSuccess, setRegisterSuccess] = useState(null);
+
+  // useEffect hook to make the API call when the component mounts
+  useEffect(() => {
+    console.log('Starting API call to /api/getVehicleByMake with make=Toyota');
+
+    axios.get('/api/getVehicleByMake?make=Toyota')
+      .then(response => {
+        console.log('API call successful:', response);
+        console.log('Vehicles data:', response.data.vehicles);
+        // Set the vehicles state with the data from the response
+        setVehicles(response.data.vehicles);
+      })
+      .catch(err => {
+        // Handle errors and set the error state
+        console.error('Error during API call:', err);
+        console.log('Error details:', err.response ? err.response.data : err.message);
+        setError(err.message);
+      });
+  }, []); // Empty dependency array ensures this runs only once on mount
+
+  // Login form submission handler
+  const handleLogin = (e) => {
+    e.preventDefault(); // Prevent default form submission
+    setLoginError(null);
+
+    axios.post('/api/login', { email: loginEmail, password: loginPassword })
+      .then(response => {
+        if (response.data.success) {
+          console.log('Login successful:', response.data);
+          setIsAuthenticated(true); // Set authentication state to true
+        } else {
+          setLoginError('Invalid credentials');
+        }
+      })
+      .catch(err => {
+        console.error('Error during login:', err);
+        setLoginError(err.response ? err.response.data.message : 'Login failed');
+      });
+  };
+
+  // Registration form submission handler
+  const handleRegister = (e) => {
+    e.preventDefault(); // Prevent default form submission
+    setRegisterError(null);
+    setRegisterSuccess(null);
+
+    axios.post('/api/register', { name, email, password })
+      .then(response => {
+        console.log('Registration successful:', response.data);
+        setRegisterSuccess('User registered successfully!');
+        setName('');
+        setEmail('');
+        setPassword('');
+      })
+      .catch(err => {
+        console.error('Error during registration:', err);
+        setRegisterError(err.response ? err.response.data.message : 'Registration failed');
+      });
+  };
+
+  // If there is an error, render an error message
+  if (error) {
+    console.log('Rendering error component with message:', error);
+    return <div className="error">Error: {error}</div>;
+  }
+
+  // Render the welcome page if the user is authenticated
+  if (isAuthenticated) {
+    return (
+      <div className="welcome-page">
+        <h1>Welcome to the Vehicle Tracking System</h1>
+        <p>You are successfully logged in!</p>
+        <button onClick={() => setIsAuthenticated(false)} className="btn">Logout</button>
+      </div>
+    );
+  }
+
+  console.log('Rendering vehicle list with', vehicles.length, 'items');
+
+  // Render login/registration cards and vehicle data
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/app/page.js
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
-
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
+    <div className="homepage-container">
+      <header className="homepage-header">
+        <img src="/logo.png" alt="Vehicle Tracking Logo" className="logo" />
+        <h1>Vehicle Tracking System</h1>
+      </header>
+      <main className="user-auth-container">
+        {showLogin ? (
+          <div className="card login-card">
+            <h2>Login</h2>
+            <form onSubmit={handleLogin}>
+              <div className="form-group">
+                <label htmlFor="email">Email:</label>
+                <input type="email" id="email" value={loginEmail} onChange={(e) => setLoginEmail(e.target.value)} placeholder="Enter your email" />
+              </div>
+              <div className="form-group">
+                <label htmlFor="password">Password:</label>
+                <input type="password" id="password" value={loginPassword} onChange={(e) => setLoginPassword(e.target.value)} placeholder="Enter your password" />
+              </div>
+              <button type="submit" className="btn">Login</button>
+              {loginError && <p className="error">{loginError}</p>}
+              <p>
+                Don't have an account?{' '}
+                <span className="link" onClick={() => setShowLogin(false)}>Register here</span>
+              </p>
+            </form>
+          </div>
+        ) : (
+          <div className="card registration-card">
+            <h2>Register</h2>
+            <form onSubmit={handleRegister}>
+              <div className="form-group">
+                <label htmlFor="name">Name:</label>
+                <input type="text" id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Enter your name" />
+              </div>
+              <div className="form-group">
+                <label htmlFor="email">Email:</label>
+                <input type="email" id="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Enter your email" />
+              </div>
+              <div className="form-group">
+                <label htmlFor="password">Password:</label>
+                <input type="password" id="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Enter your password" />
+              </div>
+              <button type="submit" className="btn">Register</button>
+              {registerError && <p className="error">{registerError}</p>}
+              {registerSuccess && <p className="success">{registerSuccess}</p>}
+              <p>
+                Already have an account?{' '}
+                <span className="link" onClick={() => setShowLogin(true)}>Login here</span>
+              </p>
+            </form>
+          </div>
+        )}
       </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+      <section className="vehicle-list-container">
+        {vehicles.length > 0 ? (
+          <ul className="vehicle-list">
+            {vehicles.map((vehicle, index) => (
+              <li key={index} className="vehicle-item">
+                <div className="vehicle-info">
+                  <p><strong>ID:</strong> {vehicle.id}</p>
+                  <p><strong>Make:</strong> {vehicle.make}</p>
+                  <p><strong>Model:</strong> {vehicle.model}</p>
+                  <p><strong>Year:</strong> {vehicle.year}</p>
+                  <p><strong>Status:</strong> {vehicle.status}</p>
+                  <p><strong>Owner:</strong> {vehicle.owner ? vehicle.owner.name : 'N/A'}</p>
+                  <p><strong>VIN:</strong> {vehicle.vin}</p>
+                  <p><strong>Registered Date:</strong> {vehicle.registeredDate}</p>
+                </div>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="loading-message">Loading vehicle data...</p>
+        )}
+      </section>
     </div>
   );
-}
+};
+
+export default HomePage;
