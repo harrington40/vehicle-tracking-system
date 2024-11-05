@@ -2,55 +2,56 @@ syntax = "proto3";
 
 package mypackage;
 
-// Existing services for vehicle data retrieval
-service MyService {
-  rpc GetVehicleByMake (VehicleRequest) returns (VehicleResponse);
-  rpc GetVehicleById (VehicleIdRequest) returns (VehicleResponse);
-}
-
-// New service for user authentication
 service AuthService {
-  rpc GetUser (UserRequest) returns (UserResponse); // RPC method to fetch user details by email
+    // Existing user-related methods
+    rpc GetUser (GetUserRequest) returns (GetUserResponse);
+    rpc AddUser (AddUserRequest) returns (AddUserResponse);
+
+    // New methods for password reset
+    rpc VerifyResetToken (VerifyResetTokenRequest) returns (VerifyResetTokenResponse);
+    rpc ResetPassword (ResetPasswordRequest) returns (ResetPasswordResponse);
 }
 
-// Message types for vehicle data retrieval
-message VehicleRequest {
-  string make = 1;
+// Messages for getting a user
+message GetUserRequest {
+    string email = 1;
 }
 
-message VehicleIdRequest {
-  string id = 1;
+message GetUserResponse {
+    string id = 1;
+    string name = 2;
+    string email = 3;
+    string password = 4; // Ensure this is stored securely
 }
 
-message VehicleResponse {
-  repeated Vehicle vehicles = 1;
+// Messages for adding a user
+message AddUserRequest {
+    string name = 1;
+    string email = 2;
+    string password = 3; // Ensure password is hashed before saving
 }
 
-message Vehicle {
-  string id = 1;
-  string make = 2;
-  string model = 3;
-  VehicleOwner owner = 4;
-  string registeredDate = 5;
-  string status = 6;
-  string vin = 7;
-  int32 year = 8;
+message AddUserResponse {
+    bool success = 1;
+    string user_id = 2; // ID of the newly created user
 }
 
-message VehicleOwner {
-  string contact = 1;
-  string name = 2;
-  string phone = 3;
+// Messages for verifying the reset token
+message VerifyResetTokenRequest {
+    string token = 1;
 }
 
-// New message types for user authentication
-message UserRequest {
-  string email = 1; // Field for the user's email
+message VerifyResetTokenResponse {
+    bool valid = 1;
 }
 
-message UserResponse {
-  string id = 1; // User ID
-  string name = 2; // User's name
-  string email = 3; // User's email
-  string password = 4; // User's hashed password
+// Messages for resetting the password
+message ResetPasswordRequest {
+    string token = 1;
+    string newPassword = 2;
+}
+
+message ResetPasswordResponse {
+    bool success = 1;
+    string message = 2;
 }

@@ -8,7 +8,7 @@ const HomePage = () => {
   // State to hold the list of vehicles, user information, and any errors
   const [vehicles, setVehicles] = useState([]);
   const [error, setError] = useState(null);
-  const [showLogin, setShowLogin] = useState(true); // Toggle between login and registration
+  const [formType, setFormType] = useState('login'); // 'login', 'register', 'resetPassword'
 
   // State for login form
   const [loginEmail, setLoginEmail] = useState('');
@@ -23,6 +23,11 @@ const HomePage = () => {
   const [registerError, setRegisterError] = useState(null);
   const [registerSuccess, setRegisterSuccess] = useState(null);
 
+  // State for password reset form
+  const [resetEmail, setResetEmail] = useState('');
+  const [resetError, setResetError] = useState(null);
+  const [resetSuccess, setResetSuccess] = useState(null);
+
   // useEffect hook to make the API call when the component mounts
   useEffect(() => {
     console.log('Starting API call to /api/getVehicleByMake with make=Toyota');
@@ -31,27 +36,25 @@ const HomePage = () => {
       .then(response => {
         console.log('API call successful:', response);
         console.log('Vehicles data:', response.data.vehicles);
-        // Set the vehicles state with the data from the response
         setVehicles(response.data.vehicles);
       })
       .catch(err => {
-        // Handle errors and set the error state
         console.error('Error during API call:', err);
         console.log('Error details:', err.response ? err.response.data : err.message);
         setError(err.message);
       });
-  }, []); // Empty dependency array ensures this runs only once on mount
+  }, []);
 
   // Login form submission handler
   const handleLogin = (e) => {
-    e.preventDefault(); // Prevent default form submission
+    e.preventDefault();
     setLoginError(null);
 
     axios.post('/api/login', { email: loginEmail, password: loginPassword })
       .then(response => {
         if (response.data.success) {
           console.log('Login successful:', response.data);
-          setIsAuthenticated(true); // Set authentication state to true
+          setIsAuthenticated(true);
         } else {
           setLoginError('Invalid credentials');
         }
@@ -64,7 +67,7 @@ const HomePage = () => {
 
   // Registration form submission handler
   const handleRegister = (e) => {
-    e.preventDefault(); // Prevent default form submission
+    e.preventDefault();
     setRegisterError(null);
     setRegisterSuccess(null);
 
@@ -75,6 +78,7 @@ const HomePage = () => {
         setName('');
         setEmail('');
         setPassword('');
+        setFormType('login'); // Switch to the login form after successful registration
       })
       .catch(err => {
         console.error('Error during registration:', err);
@@ -82,6 +86,24 @@ const HomePage = () => {
       });
   };
 
+  // Password reset form submission handler
+  const handlePasswordReset = (e) => {
+    e.preventDefault();
+    setResetError(null);
+    setResetSuccess(null);
+  
+    axios.post('/api/reset-password', { email: resetEmail })
+      .then(response => {
+        console.log('Password reset email sent:', response.data);
+        setResetSuccess('Password reset email sent! Check your inbox.');
+        setResetEmail('');
+        setFormType('login'); // Switch back to login form after reset
+      })
+      .catch(err => {
+        console.error('Error during password reset:', err);
+        setResetError(err.response ? err.response.data.message : 'Password reset failed');
+      });
+  };
   // If there is an error, render an error message
   if (error) {
     console.log('Rendering error component with message:', error);
@@ -101,7 +123,7 @@ const HomePage = () => {
 
   console.log('Rendering vehicle list with', vehicles.length, 'items');
 
-  // Render login/registration cards and vehicle data
+  // Render login/registration/reset-password cards
   return (
     <div className="homepage-container">
       <header className="homepage-header">
@@ -109,7 +131,7 @@ const HomePage = () => {
         <h1>Vehicle Tracking System</h1>
       </header>
       <main className="user-auth-container">
-        {showLogin ? (
+        {formType === 'login' && (
           <div className="card login-card">
             <h2>Login</h2>
             <form onSubmit={handleLogin}>
@@ -125,11 +147,17 @@ const HomePage = () => {
               {loginError && <p className="error">{loginError}</p>}
               <p>
                 Don't have an account?{' '}
-                <span className="link" onClick={() => setShowLogin(false)}>Register here</span>
+                <span className="link" onClick={() => setFormType('register')}>Register here</span>
+              </p>
+              <p>
+                Forgot your password?{' '}
+                <span className="link" onClick={() => setFormType('resetPassword')}>Reset it here</span>
               </p>
             </form>
           </div>
-        ) : (
+        )}
+        
+        {formType === 'register' && (
           <div className="card registration-card">
             <h2>Register</h2>
             <form onSubmit={handleRegister}>
@@ -150,34 +178,31 @@ const HomePage = () => {
               {registerSuccess && <p className="success">{registerSuccess}</p>}
               <p>
                 Already have an account?{' '}
-                <span className="link" onClick={() => setShowLogin(true)}>Login here</span>
+                <span className="link" onClick={() => setFormType('login')}>Login here</span>
+              </p>
+            </form>
+          </div>
+        )}
+
+        {formType === 'resetPassword' && (
+          <div className="card reset-password-card">
+            <h2>Reset Password</h2>
+            <form onSubmit={handlePasswordReset}>
+              <div className="form-group">
+                <label htmlFor="resetEmail">Email:</label>
+                <input type="email" id="resetEmail" value={resetEmail} onChange={(e) => setResetEmail(e.target.value)} placeholder="Enter your email" />
+              </div>
+              <button type="submit" className="btn">Send Reset Link</button>
+              {resetError && <p className="error">{resetError}</p>}
+              {resetSuccess && <p className="success">{resetSuccess}</p>}
+              <p>
+                Remembered your password?{' '}
+                <span className="link" onClick={() => setFormType('login')}>Login here</span>
               </p>
             </form>
           </div>
         )}
       </main>
-      <section className="vehicle-list-container">
-        {vehicles.length > 0 ? (
-          <ul className="vehicle-list">
-            {vehicles.map((vehicle, index) => (
-              <li key={index} className="vehicle-item">
-                <div className="vehicle-info">
-                  <p><strong>ID:</strong> {vehicle.id}</p>
-                  <p><strong>Make:</strong> {vehicle.make}</p>
-                  <p><strong>Model:</strong> {vehicle.model}</p>
-                  <p><strong>Year:</strong> {vehicle.year}</p>
-                  <p><strong>Status:</strong> {vehicle.status}</p>
-                  <p><strong>Owner:</strong> {vehicle.owner ? vehicle.owner.name : 'N/A'}</p>
-                  <p><strong>VIN:</strong> {vehicle.vin}</p>
-                  <p><strong>Registered Date:</strong> {vehicle.registeredDate}</p>
-                </div>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="loading-message">Loading vehicle data...</p>
-        )}
-      </section>
     </div>
   );
 };

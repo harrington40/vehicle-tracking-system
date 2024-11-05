@@ -1,103 +1,143 @@
-// Import necessary modules for gRPC and database operations
 const grpc = require('@grpc/grpc-js');
 const protoLoader = require('@grpc/proto-loader');
 const rethinkdb = require('rethinkdb');
+const bcrypt = require('bcryptjs');
+const uuid = require('uuid');
 const path = require('path');
 
-// Load the .proto file for defining the gRPC service
-console.log('Loading .proto file...');
+
 const packageDefinition = protoLoader.loadSync(
-  path.join(__dirname, 'protos', 'service.proto'), // Path to the .proto file
-  {
-    keepCase: true,
-    longs: String,
-    enums: String,
-    defaults: true,
-    oneofs: true
-  }
+    path.join(__dirname, 'protos', 'service.proto'),
+    {
+        keepCase: true,
+        longs: String,
+        enums: String,
+        defaults: true,
+        oneofs: true
+    }
 );
 
-// Load the gRPC service package definition
 const serviceProto = grpc.loadPackageDefinition(packageDefinition).mypackage;
 
-// Ensure the service was loaded correctly
-if (serviceProto && serviceProto.AuthService) {
-  console.log('Loaded gRPC Service:', serviceProto.AuthService);
-} else {
-  console.error('Failed to load gRPC service definition. Check the .proto file and package name.');
-  process.exit(1);
-}
-
-// Establish a connection to the RethinkDB database
-console.log('Attempting to connect to RethinkDB...');
 let dbConnection;
 rethinkdb.connect({ host: 'localhost', port: 28015, db: 'vehicle_tracking' }, (err, conn) => {
-  if (err) {
-    console.error('Error connecting to RethinkDB:', err);
-    process.exit(1);
-  } else {
-    console.log('Connected to RethinkDB');
-    dbConnection = conn;
-  }
+    if (err) {
+        console.error('Error connecting to RethinkDB:', err);
+        process.exit(1);
+    } else {
+        console.log('Connected to RethinkDB');
+        dbConnection = conn;
+    }
 });
 
-/**
- * Implementation of the GetUser gRPC method to fetch user details, including the hashed password.
- * @param {Object} call - The gRPC call object containing the request.
- * @param {Function} callback - The callback function to send the response.
- */
+// Existing GetUser implementation
 function getUser(call, callback) {
-  console.log('Received gRPC request for GetUser');
-  const email = call.request.email.trim(); // Trim to remove any unexpected whitespace
-  console.log(`Fetching user with email: "${email}"`);
+    const email = call.request.email.trim();
+    rethinkdb.table('Users').filter({ email }).run(dbConnection, (err, cursor) => {
+        if (err) {
+            callback({ code: grpc.status.INTERNAL, message: 'Error querying the database' });
+            return;
+        }
 
-  rethinkdb.table('Users').filter({ email }).run(dbConnection, (err, cursor) => {
-    if (err) {
-      console.error('Error querying RethinkDB:', err);
-      callback({
-        code: grpc.status.INTERNAL,
-        message: 'Error querying the database',
-      });
-      return;
-    }
-
-    cursor.toArray((err, result) => {
-      if (err) {
-        console.error('Error converting cursor to array:', err);
-        callback({
-          code: grpc.status.INTERNAL,
-          message: 'Error processing database result',
+        cursor.toArray((err, result) => {
+            if (err) {
+                callback({ code: grpc.status.INTERNAL, message: 'Error processing database result' });
+            } else if (result.length === 0) {
+                callback({ code: grpc.status.NOT_FOUND, message: 'User not found' });
+            } else {
+                callback(null, {
+                    id: result[0].id,
+                    name: result[0].name,
+                    email: result[0].email,
+                    password: result[0].password,
+                });
+            }
         });
-      } else if (result.length === 0) {
-        console.log('No user found for the given email.');
-        callback({
-          code: grpc.status.NOT_FOUND,
-          message: 'User not found',
-        });
-      } else {
-        console.log('Returning user to client:', result[0]);
-        callback(null, {
-          id: result[0].id,
-          name: result[0].name,
-          email: result[0].email,
-          password: result[0].password, // Ensure this is a hashed password
-        });
-      }
     });
-  });
 }
 
-// Create the gRPC server and add the AuthService
-const server = new grpc.Server();
-server.addService(serviceProto.AuthService.service, { getUser });
+// Existing AddUser implementation
+async function addUser(call, callback) {
+    const { name, email, password } = call.request;
 
-// Start the server and bind it to a specific port
+    try {
+        // Hash the password before storing it
+        const hashedPassword = await bcrypt.hash(password, 10); // Adjust rounds if needed
+
+        const result = await rethinkdb.table('Users').insert({
+            name,
+            email,
+            password: hashedPassword, // Store the hashed password
+        }).run(dbConnection);
+
+        if (result.inserted === 1) {
+            callback(null, { success: true, user_id: result.generated_keys[0] });
+        } else {
+            callback({ code: grpc.status.INTERNAL, message: 'User creation failed' });
+        }
+    } catch (error) {
+        console.error('Error adding user:', error);
+        callback({ code: grpc.status.INTERNAL, message: 'Error inserting user into database' });
+    }
+}
+
+// New method to verify reset token
+async function verifyResetToken(call, callback) {
+    const { token } = call.request;
+
+    try {
+        const cursor = await rethinkdb.table('Users').filter({ resetToken: token }).run(dbConnection);
+        const users = await cursor.toArray();
+
+        if (users.length === 0) {
+            callback(null, { valid: false });
+        } else {
+            callback(null, { valid: true });
+        }
+    } catch (error) {
+        console.error('Error verifying reset token:', error);
+        callback({ code: grpc.status.INTERNAL, message: 'Error verifying token' });
+    }
+}
+
+// New method to reset password
+async function resetPassword(call, callback) {
+    const { token, newPassword } = call.request;
+
+    try {
+        const cursor = await rethinkdb.table('Users').filter({ resetToken: token }).run(dbConnection);
+        const users = await cursor.toArray();
+
+        if (users.length === 0) {
+            callback(null, { success: false, message: 'Invalid or expired token' });
+            return;
+        }
+
+        const userId = users[0].id;
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+        await rethinkdb.table('Users').get(userId).update({
+            password: hashedPassword,
+            resetToken: null  // Clear the reset token after resetting the password
+        }).run(dbConnection);
+
+        callback(null, { success: true, message: 'Password reset successfully' });
+    } catch (error) {
+        console.error('Error resetting password:', error);
+        callback({ code: grpc.status.INTERNAL, message: 'Failed to reset password' });
+    }
+}
+
+// Create the gRPC server and add methods
+const server = new grpc.Server();
+server.addService(serviceProto.AuthService.service, { getUser, addUser, verifyResetToken, resetPassword });
+
 const PORT = '0.0.0.0:50051';
 server.bindAsync(PORT, grpc.ServerCredentials.createInsecure(), (err, port) => {
-  if (err) {
-    console.error('Failed to bind gRPC server:', err);
-    return;
-  }
-  console.log(`gRPC server running at ${PORT}`);
-  server.start();
+    if (err) {
+        console.error('Failed to bind gRPC server:', err);
+        return;
+    }
+    console.log(`gRPC server running at ${PORT}`);
+    server.start();
 });
