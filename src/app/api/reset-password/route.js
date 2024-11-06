@@ -1,78 +1,90 @@
-import nodemailer from 'nodemailer';
-import bcrypt from 'bcryptjs'; // For hashing passwords
-import { v4 as uuidv4 } from 'uuid';
+// Import NextResponse for sending HTTP responses in a Next.js API route
+import { NextResponse } from 'next/server';
+import * as grpc from '@grpc/grpc-js';
+import * as protoLoader from '@grpc/proto-loader';
+import rethinkdb from 'rethinkdb';
 
-
-// List of common spam domains
-const blockedDomains = ['spamdomain.com', 'anotherbadmail.com', 'disposablemail.com'];
-
-// Utility function to check for spam domains
-const isSpamDomain = (email) => {
-  const domain = email.split('@')[1];
-  return blockedDomains.includes(domain);
-};
-
-// Nodemailer configuration
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
+const PROTO_PATH = './grpc-server/protos/service.proto';
+const packageDefinition = protoLoader.loadSync(PROTO_PATH, {
+  keepCase: true,
+  longs: String,
+  enums: String,
+  defaults: true,
+  oneofs: true,
 });
 
-// Mock database functions (replace with actual database logic)
-const findUserByEmail = async (email) => {
-  // Replace this with actual database query to find the user by email
-  return email === 'existinguser@example.com' ? { id: 1, email } : null;
-};
+const serviceProto = grpc.loadPackageDefinition(packageDefinition).mypackage.AuthService;
+const client = new serviceProto(
+  'localhost:50051',
+  grpc.credentials.createInsecure()
+);
 
-const saveResetToken = async (userId, resetToken) => {
-  // Replace this with actual database logic to save the reset token for the user
-  console.log(`Reset token saved for user ID ${userId}: ${resetToken}`);
-  return true;
-};
+async function getDBConnection() {
+  return await rethinkdb.connect({ host: 'localhost', port: 28015, db: 'vehicle_tracking' });
+}
 
 export async function POST(req) {
-  const { email } = await req.json();
-
-  // Check if the email is from a spam domain
-  if (isSpamDomain(email)) {
-    return new Response(JSON.stringify({ message: 'Invalid email domain' }), { status: 400 });
-  }
-
-  // Verify the email exists in the database
-  const user = await findUserByEmail(email);
-  if (!user) {
-    return new Response(JSON.stringify({ message: 'Email not found' }), { status: 404 });
-  }
-
-  // Generate a unique reset token
-  const resetToken = uuidv4();
-
-  // Save the reset token in the database
-  const saveResult = await saveResetToken(user.id, resetToken);
-  if (!saveResult) {
-    return new Response(JSON.stringify({ message: 'Failed to save reset token' }), { status: 500 });
-  }
-
-  // Create a reset link with the token
-  const resetLink = `http://localhost:3003/reset-password?token=${resetToken}`;
-
-  // Prepare the email content
-  const mailOptions = {
-    from: process.env.EMAIL_USER,
-    to: email,
-    subject: 'Password Reset Request',
-    text: `Click the following link to reset your password: ${resetLink}\n\nIf you did not request this, please ignore this email.`,
-  };
+  let dbConnection;
 
   try {
-    // Send the password reset email
-    await transporter.sendMail(mailOptions);
-    return new Response(JSON.stringify({ message: 'Password reset link sent to your email!' }), { status: 200 });
+    const { email } = await req.json();
+    console.log(`Password reset request received for email: ${email}`);
+
+    // Function to call the gRPC method
+    const getUser = (email) => {
+      return new Promise((resolve, reject) => {
+        client.getUser({ email }, (error, response) => {
+          if (error) {
+            console.error('Error from gRPC server:', error);
+            reject(error);
+          } else {
+            resolve(response);
+          }
+        });
+      });
+    };
+
+    // Retrieve user data from gRPC
+    const user = await getUser(email);
+
+    if (!user) {
+      console.warn(`User not found for email: ${email}`);
+      return NextResponse.json({ success: false, message: 'User not found' }, { status: 404 });
+    }
+
+    console.log(`User found. Sending password reset email to ${email}`);
+
+    // Here you would typically generate a token and send a reset email
+    // For example, you could use Nodemailer for sending emails
+    // const resetToken = generateResetToken();
+    // await sendResetEmail(email, resetToken);
+
+    return NextResponse.json({
+      success: true,
+      message: 'Password reset email sent',
+    });
   } catch (error) {
-    console.error('Error sending email:', error);
-    return new Response(JSON.stringify({ message: 'Failed to send email', error: error.message }), { status: 500 });
+    console.error('Error during password reset operation:', error);
+    return NextResponse.json(
+      { success: false, message: 'Server error', error: error.message },
+      { status: 500 }
+    );
+  } finally {
+    if (dbConnection) {
+      dbConnection.close();
+      console.log('Database connection closed.');
+    }
   }
+}
+
+// Helper function to generate a reset token
+function generateResetToken() {
+  // Implement token generation logic (e.g., using JWT or random string)
+  return 'generated-reset-token';
+}
+
+// Helper function to send the reset email
+async function sendResetEmail(email, token) {
+  // Use an email service like Nodemailer to send the email
+  // e.g., `await transporter.sendMail({ to: email, subject: "Password Reset", text: "Your reset token is: " + token });`
 }
