@@ -12,7 +12,7 @@ import rethinkdb from 'rethinkdb';
 async function getDBConnection() {
   try {
     // Attempt to establish a new connection to the RethinkDB server
-    return await rethinkdb.connect({ host: 'localhost', port: 28015, db: 'VehicleDB' });
+    return await rethinkdb.connect({ host: 'localhost', port: 28015, db: 'vehicle_tracking' });
   } catch (err) {
     console.error('Error establishing a new RethinkDB connection:', err);
     throw err; // Rethrow the error to be handled by the caller
@@ -43,7 +43,7 @@ export async function GET(request) {
     }
 
     // Query the 'vehicle' table for documents that match the specified 'make'
-    const cursor = await rethinkdb.table('vehicle').filter({ make }).run(connection);
+    const cursor = await rethinkdb.table('Vehicles').filter({ make }).run(connection);
     // Convert the cursor result to an array of vehicles
     const vehicles = await cursor.toArray();
 

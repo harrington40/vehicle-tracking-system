@@ -1,61 +1,88 @@
-.card {
-  background-color: #ffffff;
-  border: 1px solid #ccc;
-  border-radius: 8px;
+/* Centering the Homepage Content */
+.homepage-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh; /* Full viewport height */
+  background-color: #f8f9fa;
   padding: 20px;
-  width: 300px;
-  margin: 20px auto;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
-h2 {
+/* Styling for the Login Card */
+.login-card {
+  width: 350px; /* Slightly wider for better spacing */
+  padding: 20px;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); /* Soft shadow for elevation */
   text-align: center;
-  color: #004080;
 }
 
+/* Header within Login Card */
+.login-card h2 {
+  margin-bottom: 20px;
+}
+
+/* Form Group Styling */
 .form-group {
   margin-bottom: 15px;
+  text-align: left;
 }
 
-label {
+.form-group label {
+  font-weight: bold;
   display: block;
   margin-bottom: 5px;
-  color: #555;
 }
 
-input {
-  width: 100%;
-  padding: 8px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-}
-
-.btn {
+.form-group input {
   width: 100%;
   padding: 10px;
-  background-color: #004080;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  outline: none;
+}
+
+/* Button Styles */
+.btn {
+  padding: 10px 20px;
+  background-color: #007bff;
   color: #fff;
   border: none;
   border-radius: 4px;
   cursor: pointer;
-}
-
-.btn:hover {
-  background-color: #003366;
-}
-
-.link {
-  color: #004080;
-  display: block;
-  text-align: center;
+  transition: background-color 0.3s ease;
+  width: 100%; /* Full width button */
   margin-top: 10px;
 }
 
-.link a {
-  color: #004080;
-  text-decoration: none;
+.btn:hover {
+  background-color: #0056b3;
 }
 
-.link a:hover {
+/* Error Message Styling */
+.error {
+  color: red;
+  margin-top: 10px;
+  font-size: 0.9em;
+}
+
+/* Auth Links Styling */
+.auth-links {
+  margin-top: 15px;
+  font-size: 0.9em;
+}
+
+.auth-links p {
+  margin: 5px 0;
+}
+
+.auth-links .link {
+  color: #007bff;
+  cursor: pointer;
   text-decoration: underline;
+}
+
+.auth-links .link:hover {
+  color: #0056b3;
 }

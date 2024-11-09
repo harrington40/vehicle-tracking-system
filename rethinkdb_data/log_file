@@ -1,0 +1,12 @@
+2024-11-06T18:31:26.924337563 0.005780s notice: Running rethinkdb 2.4.4-3-gee431c (x86_64-linux-gnu) (GCC 14.2.0)...
+2024-11-06T18:31:26.925537249 0.006978s notice: Running on Linux 6.11.0-8-generic x86_64
+2024-11-06T18:31:26.925574589 0.007014s notice: Loading data from directory /home/harrington4/Design_Project2020/programming/expo/vehicle-design-system/my-grpc-nextjs-app/rethinkdb_data
+2024-11-06T18:31:26.927102461 0.008542s error: Inaccessible database file: "/home/harrington4/Design_Project2020/programming/expo/vehicle-design-system/my-grpc-nextjs-app/rethinkdb_data/metadata": No such file or directory\nSome possible reasons:\n- the database file couldn't be created or opened for reading and writing\n- the user which was used to start the database is not an owner of the file
+2024-11-06T18:31:37.849715446 0.008898s notice: Running rethinkdb 2.4.4-3-gee431c (x86_64-linux-gnu) (GCC 14.2.0)...
+2024-11-06T18:31:37.851021571 0.010202s notice: Running on Linux 6.11.0-8-generic x86_64
+2024-11-06T18:31:37.851063398 0.010244s notice: Loading data from directory /home/harrington4/Design_Project2020/programming/expo/vehicle-design-system/my-grpc-nextjs-app/rethinkdb_data
+2024-11-06T18:31:37.852469362 0.011650s error: Inaccessible database file: "/home/harrington4/Design_Project2020/programming/expo/vehicle-design-system/my-grpc-nextjs-app/rethinkdb_data/metadata": No such file or directory\nSome possible reasons:\n- the database file couldn't be created or opened for reading and writing\n- the user which was used to start the database is not an owner of the file
+2024-11-06T18:33:24.150555454 0.008922s notice: Running rethinkdb 2.4.4-3-gee431c (x86_64-linux-gnu) (GCC 14.2.0)...
+2024-11-06T18:33:24.151767749 0.010133s notice: Running on Linux 6.11.0-8-generic x86_64
+2024-11-06T18:33:24.151796679 0.010161s notice: Loading data from directory /home/harrington4/Design_Project2020/programming/expo/vehicle-design-system/my-grpc-nextjs-app/rethinkdb_data
+2024-11-06T18:33:24.153159055 0.011523s error: Inaccessible database file: "/home/harrington4/Design_Project2020/programming/expo/vehicle-design-system/my-grpc-nextjs-app/rethinkdb_data/metadata": No such file or directory\nSome possible reasons:\n- the database file couldn't be created or opened for reading and writing\n- the user which was used to start the database is not an owner of the file

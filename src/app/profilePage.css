@@ -1,0 +1,122 @@
+/* Profile Page Layout */
+.profile-page {
+    display: flex;
+    gap: 20px;
+    padding: 20px;
+  }
+  
+  /* Sidebar Styling */
+  .profile-sidebar {
+    width: 250px;
+    text-align: center;
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 8px;
+  }
+  
+  .avatar {
+    width: 100px;
+    border-radius: 50%;
+    margin-bottom: 10px;
+  }
+  
+  .btn {
+    padding: 10px 20px;
+    background-color: #007bff;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-top: 10px;
+    transition: background-color 0.3s ease;
+  }
+  
+  .follow-btn {
+    margin-right: 10px;
+  }
+  
+  .btn:hover {
+    background-color: #0056b3;
+  }
+  
+  /* Social Links */
+  .social-links p {
+    margin: 5px 0;
+  }
+  
+  .social-links p a {
+    text-decoration: none;
+    color: #007bff;
+    font-weight: bold;
+  }
+  
+  .social-links p a:hover {
+    color: #0056b3;
+  }
+  
+  /* Main Profile Information Section */
+  .profile-main {
+    flex: 1;
+  }
+  
+  .profile-info,
+  .project-status {
+    background: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+  }
+  
+  .profile-info form label,
+  .project-status label {
+    font-weight: bold;
+    display: block;
+    margin-top: 10px;
+  }
+  
+  .profile-info form input {
+    width: 100%;
+    padding: 8px;
+    margin-top: 5px;
+    margin-bottom: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+  }
+  
+  /* Project Status Styling */
+  .progress-item {
+    margin-top: 15px;
+  }
+  
+  .progress-bar {
+    background: #e9ecef;
+    border-radius: 5px;
+    overflow: hidden;
+    margin-top: 5px;
+  }
+  
+  .progress {
+    height: 10px;
+    border-radius: 5px;
+  }
+  
+  .progress-web-design {
+    background-color: #007bff;
+  }
+  
+  .progress-website-markup {
+    background-color: red;
+  }
+  
+  .progress-one-page {
+    background-color: green;
+  }
+  
+  .progress-mobile-template {
+    background-color: yellow;
+  }
+  
+  .progress-backend-api {
+    background-color: #4CAF50;
+  }
+  

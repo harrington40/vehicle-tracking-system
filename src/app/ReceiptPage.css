@@ -1,0 +1,87 @@
+.receipt-page {
+  font-family: Arial, sans-serif;
+  padding: 20px;
+  max-width: 800px;
+  margin: auto;
+  color: #333;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  border-bottom: 2px solid #007bff;
+  padding-bottom: 20px;
+  margin-bottom: 20px;
+}
+
+.header h2, .header h3 {
+  color: #007bff;
+}
+
+.invoice-to h4 {
+  font-size: 1.2em;
+  color: #007bff;
+}
+
+.invoice-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 20px;
+}
+
+.invoice-table th, .invoice-table td {
+  border: 1px solid #ddd;
+  padding: 10px;
+  text-align: left;
+}
+
+.invoice-table th {
+  background-color: #f8f9fa;
+}
+
+.item-id {
+  background-color: #007bff;
+  color: #fff;
+  text-align: center;
+  font-weight: bold;
+  width: 50px;
+}
+
+.details {
+  font-size: 0.9em;
+  color: #666;
+}
+
+.item-total {
+  color: #007bff;
+  font-weight: bold;
+  text-align: right;
+}
+
+.totals {
+  text-align: right;
+  margin-top: 20px;
+}
+
+.totals p {
+  margin: 5px 0;
+  font-size: 1em;
+}
+
+.totals hr {
+  margin: 10px 0;
+  border: 1px solid #ddd;
+}
+
+.grand-total {
+  font-size: 1.2em;
+  color: #007bff;
+  font-weight: bold;
+}
+
+.thank-you {
+  text-align: center;
+  margin-top: 20px;
+  font-size: 1.2em;
+  color: #007bff;
+}
