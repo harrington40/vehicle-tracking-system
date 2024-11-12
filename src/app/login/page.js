@@ -35,7 +35,7 @@ export default function LoginPage() {
   return (
     <div style={styles.container}>
       <div style={styles.formContainer}>
-        <h2>Login</h2>
+        <h2 style={styles.title}>Login</h2>
         <form onSubmit={handleSubmit} style={styles.form}>
           <div style={styles.inputGroup}>
             <label>Email:</label>
@@ -62,6 +62,12 @@ export default function LoginPage() {
             Login
           </button>
         </form>
+        {/* Links for "Register" and "Forgot Password" */}
+        <div style={styles.linkContainer}>
+          <a href="/register" style={styles.link}>Register</a>
+          <span style={styles.linkSeparator}>|</span>
+          <a href="/forgot-password" style={styles.link}>Forgot Password?</a>
+        </div>
       </div>
     </div>
   );
@@ -83,6 +89,12 @@ const styles = {
     borderRadius: '8px',
     boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
     textAlign: 'center',
+    fontFamily: 'Arial, sans-serif',
+  },
+  title: {
+    fontSize: '1.5em',
+    color: '#333',
+    marginBottom: '20px',
   },
   form: {
     display: 'flex',
@@ -103,7 +115,7 @@ const styles = {
     border: '1px solid #ccc',
   },
   button: {
-    backgroundColor: 'blue',
+    backgroundColor: '#4A90E2', // Blue color for the login button
     color: 'white',
     padding: '10px 20px',
     border: 'none',
@@ -111,9 +123,25 @@ const styles = {
     cursor: 'pointer',
     width: '100%',
     marginTop: '10px',
+    fontWeight: 'bold',
   },
   error: {
     color: 'red',
     marginBottom: '10px',
+  },
+  linkContainer: {
+    display: 'flex',
+    justifyContent: 'center',
+    marginTop: '15px',
+  },
+  link: {
+    fontSize: '0.9em',
+    color: '#4A90E2',
+    textDecoration: 'none',
+    margin: '0 5px',
+    cursor: 'pointer',
+  },
+  linkSeparator: {
+    color: '#888', // Separator color
   },
 };
