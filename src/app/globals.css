@@ -2,20 +2,28 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Define default colors for light mode */
 :root {
-  --background: #ffffff;
+  --background: #B4D5C2; /* Light greenish-blue background for the dashboard */
   --foreground: #171717;
+  --bar-chart-bar-color: #2ECC71; /* Light green for the bars */
+  --bar-chart-background: #2A3A3F; /* Dark green/teal for the chart background */
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
     --background: #0a0a0a;
     --foreground: #ededed;
+    --bar-chart-bar-color: #34D399; /* A lighter shade for dark mode */
+    --bar-chart-background: #1B2A2F; /* Darker teal for chart background */
   }
 }
 
-body {
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
   color: var(--foreground);
-  background: var(--background);
+  background-color: var(--background);
   font-family: Arial, Helvetica, sans-serif;
 }
