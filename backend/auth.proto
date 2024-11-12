@@ -3,6 +3,7 @@ package auth;
 
 service AuthService {
   rpc Login (LoginRequest) returns (LoginResponse);
+  rpc VerifyToken (TokenRequest) returns (TokenResponse);
 }
 
 message LoginRequest {
@@ -13,4 +14,19 @@ message LoginRequest {
 message LoginResponse {
   string token = 1;
   string error = 2;
+}
+
+message TokenRequest {
+  string token = 1;
+}
+
+message TokenResponse {
+  bool success = 1;
+  string error = 2;
+  User user = 3;
+}
+
+message User {
+  string id = 1;
+  string email = 2;
 }

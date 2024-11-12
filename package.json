@@ -13,6 +13,7 @@
     "@grpc/grpc-js": "^1.12.2",
     "@grpc/proto-loader": "^0.7.13",
     "bcryptjs": "^2.4.3",
+    "cookie": "^1.0.1",
     "dotenv": "^16.4.5",
     "grpc": "^1.24.11",
     "jsonwebtoken": "^9.0.2",
@@ -23,6 +24,7 @@
     "rethinkdbdash": "^2.3.31"
   },
   "devDependencies": {
+    "cypress": "^13.15.2",
     "eslint": "^8",
     "eslint-config-next": "15.0.3",
     "postcss": "^8",

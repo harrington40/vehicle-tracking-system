@@ -1,49 +1,36 @@
-"use client";
+"use client"; // Client-side only
 
-import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
 
 export default function DashboardPage() {
   const router = useRouter();
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Retrieve token from cookies
-    const token = document.cookie
-      .split('; ')
-      .find((row) => row.startsWith('token='))
-      ?.split('=')[1];
-
-    // If no token, redirect to login
-    if (!token) {
-      router.push('/login');
-      return;
-    }
-
-    // Fetch verification from API route
     fetch('/api/verify-token', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ token }),
+      credentials: 'include', // Include cookies
     })
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.error) {
-          console.error("Authentication failed:", data.error);
-          router.push('/login');
-        } else {
-          setIsAuthenticated(true);
+      .then((response) => {
+        if (response.ok) {
+          return response.json(); // Token is valid
         }
+        throw new Error('Unauthorized'); // Token is invalid
       })
-      .catch((err) => {
-        console.error("API call error:", err);
-        router.push('/login');
+      .then(() => {
+        setLoading(false);
+      })
+      .catch((error) => {
+        console.error("API call error:", error);
+        setLoading(false);
+        router.push('/login'); // Redirect on error
       });
   }, [router]);
 
-  if (!isAuthenticated) return null; // Render nothing until authenticated
+  if (loading) {
+    return <div>Loading...</div>;
+  }
 
   return <div>Welcome to the dashboard!</div>;
 }

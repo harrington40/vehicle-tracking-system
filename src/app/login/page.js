@@ -1,4 +1,4 @@
-"use client"; // Required for client-side interactivity in Next.js app directory
+"use client"; // Required for client-side interactivity in the Next.js app directory
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -11,24 +11,26 @@ export default function LoginPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-  
-    const res = await fetch('/api/auth', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
-    });
-  
-    console.log("Response status:", res.status); // Log status
-    const data = await res.json();
-    console.log("Response data:", data); // Log response body for more info
-  
-    if (res.ok) {
-      router.push('/dashboard');
-    } else {
-      setError(data.error || 'Login failed');
+
+    try {
+      const res = await fetch('/api/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (res.ok) {
+        // Redirect to the dashboard on successful login
+        router.push('/dashboard');
+      } else {
+        const { error } = await res.json();
+        setError(error || 'Login failed');
+      }
+    } catch (error) {
+      console.error("Error during login:", error);
+      setError('An error occurred. Please try again.');
     }
   };
-  
 
   return (
     <div style={styles.container}>
@@ -70,8 +72,8 @@ const styles = {
     display: 'flex',
     justifyContent: 'center',
     alignItems: 'center',
-    height: '100vh', // Full viewport height
-    backgroundColor: '#f0f2f5', // Light background color
+    height: '100vh',
+    backgroundColor: '#f0f2f5',
   },
   formContainer: {
     width: '100%',
