@@ -29,6 +29,46 @@ const envContent = fs.readFileSync(envPath, 'utf-8').split('\n').reduce((acc, li
 const JWT_SECRET = envContent.JWT_SECRET || 'your_jwt_secret';
 const RETHINKDB_CONFIG = { host: 'localhost', port: 28015, db: 'vehicle_tracking' };
 
+// gRPC RegisterUser Method
+async function registerUser(call, callback) {
+  const { name, email, password } = call.request;
+  console.log("Register attempt with email:", email);
+
+  let connection = null;
+
+  try {
+    connection = await r.connect(RETHINKDB_CONFIG);
+
+    // Check if the user already exists
+    const cursor = await r.table('Users').filter({ email }).run(connection);
+    const existingUser = await cursor.toArray();
+
+    if (existingUser.length > 0) {
+      callback(null, { error: 'User with this email already exists', success: false });
+      return;
+    }
+
+    // Hash the password before saving
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Insert new user record
+    const result = await r.table('Users')
+      .insert({ name, email, password: hashedPassword, createdAt: new Date() })
+      .run(connection);
+
+    if (result.inserted === 1) {
+      callback(null, { success: true, message: 'User registered successfully' });
+    } else {
+      callback(null, { success: false, error: 'Failed to register user' });
+    }
+  } catch (err) {
+    console.error("Error during registration:", err);
+    callback(null, { success: false, error: 'Registration failed' });
+  } finally {
+    if (connection) connection.close();
+  }
+}
+
 // gRPC Login Method
 async function login(call, callback) {
   const { email, password } = call.request;
@@ -100,6 +140,7 @@ function verifyToken(call, callback) {
 function main() {
   const server = new grpc.Server();
   server.addService(authProto.AuthService.service, { 
+    RegisterUser: registerUser, // Add RegisterUser service
     Login: login, 
     VerifyToken: verifyToken 
   });

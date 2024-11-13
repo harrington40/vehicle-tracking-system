@@ -1,9 +1,23 @@
 syntax = "proto3";
+
 package auth;
 
 service AuthService {
   rpc Login (LoginRequest) returns (LoginResponse);
   rpc VerifyToken (TokenRequest) returns (TokenResponse);
+  rpc RegisterUser (RegisterUserRequest) returns (RegisterUserResponse);
+}
+
+message RegisterUserRequest {
+  string name = 1;
+  string email = 2;
+  string password = 3;
+}
+
+message RegisterUserResponse {
+  string userId = 1;     // ID of the newly registered user
+  string message = 2;    // Success message or error details
+  string error = 3;      // Error message if registration fails
 }
 
 message LoginRequest {
