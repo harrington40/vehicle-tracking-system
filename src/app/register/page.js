@@ -1,6 +1,7 @@
 "use client"; // Required for client-side interactivity in Next.js
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation'; // Import useRouter from next/navigation
 import { FaUser, FaEnvelope, FaLock, FaExclamationTriangle } from 'react-icons/fa';
 
 export default function Register() {
@@ -14,6 +15,8 @@ export default function Register() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  
+  const router = useRouter(); // Initialize useRouter
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -41,6 +44,11 @@ export default function Register() {
       if (response.ok && result.id) {
         setSuccess(true);
         setFormData({ name: '', email: '', confirmEmail: '', password: '' });
+
+        // Redirect to login page after a short delay
+        setTimeout(() => {
+          router.push('/login'); // Redirect to the login page
+        }, 1000);
       } else {
         setError(result.error || 'Registration failed');
       }
@@ -50,12 +58,12 @@ export default function Register() {
       setLoading(false);
     }
   };
-  
+
   return (
     <div style={styles.container}>
       <h2 style={styles.title}>Sign up</h2>
       <form onSubmit={handleSubmit} style={styles.form}>
-        {success && <p style={styles.success}>Registration successful!</p>}
+        {success && <p style={styles.success}>Registration successful! Redirecting to login...</p>}
         {error && <p style={styles.error}>{error}</p>}
 
         <div style={styles.inputGroup}>
