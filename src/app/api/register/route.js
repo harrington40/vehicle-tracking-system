@@ -1,10 +1,9 @@
-// pages/api/register.js
-import grpc from '@grpc/grpc-js';
-import protoLoader from '@grpc/proto-loader';
+import * as grpc from '@grpc/grpc-js';
+import * as protoLoader from '@grpc/proto-loader';
 import path from 'path';
 
-// Load the .proto file
-const PROTO_PATH = path.resolve('./backend/auth.proto');
+// Load the .proto file and initialize the gRPC client
+const PROTO_PATH = path.join(process.cwd(), 'backend', 'auth.proto'); 
 const packageDefinition = protoLoader.loadSync(PROTO_PATH, {
   keepCase: true,
   longs: String,
@@ -14,27 +13,33 @@ const packageDefinition = protoLoader.loadSync(PROTO_PATH, {
 });
 const authProto = grpc.loadPackageDefinition(packageDefinition).auth;
 
-// Initialize gRPC client to connect with the gRPC server
 const client = new authProto.AuthService(
-  '0.0.0.0:50051', // Replace with your gRPC server address
+  '0.0.0.0:50051', // gRPC server address
   grpc.credentials.createInsecure()
 );
 
-export default async function handler(req, res) {
-  if (req.method === 'POST') {
-    const { name, email, password } = req.body;
+// Named handler for POST requests
+export async function POST(req) {
+  const { name, email, password } = await req.json();
 
-    // Call the RegisterUser gRPC method
+  return new Promise((resolve) => {
     client.RegisterUser({ name, email, password }, (error, response) => {
       if (error) {
-        res.status(500).json({ error: error.message });
+        console.error('gRPC error:', error);
+        resolve(new Response(JSON.stringify({ error: 'Internal server error' }), { status: 500 }));
       } else if (response.success) {
-        res.status(200).json({ message: response.message });
+        resolve(new Response(JSON.stringify({ message: response.message, id: response.id }), { status: 200 }));
       } else {
-        res.status(400).json({ error: response.error });
+        resolve(new Response(JSON.stringify({ error: response.error || 'Registration failed' }), { status: 400 }));
       }
     });
-  } else {
-    res.status(405).json({ message: 'Method not allowed' });
-  }
+  });
+}
+
+// Optional handler for GET requests (if needed)
+export async function GET(req) {
+  return new Response(JSON.stringify({ message: 'This endpoint supports POST for user registration.' }), {
+    status: 200,
+    headers: { 'Content-Type': 'application/json' },
+  });
 }

@@ -15,8 +15,6 @@ const packageDefinition = protoLoader.loadSync(PROTO_PATH, {
   defaults: true,
   oneofs: true,
 });
-
-// Load the package definition and access the AuthService from the `auth` package
 const authProto = grpc.loadPackageDefinition(packageDefinition).auth;
 
 // Load JWT secret from .env.local
@@ -48,17 +46,36 @@ async function registerUser(call, callback) {
       return;
     }
 
+    // Generate `userId` based on specified format
+    const countryCode = 'US'; // Replace with actual country code if needed
+    const date = new Date();
+    const year = date.getFullYear().toString().slice(-2);
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const day = date.getDate().toString().padStart(2, '0');
+
+    // Calculate device count based on existing IDs with the same prefix
+    const deviceCountCursor = await r.table('Users')
+      .filter(r.row('id').match(`^TT-${countryCode}\\d{3}-${year}${month}${day}`))
+      .count()
+      .run(connection);
+
+    const deviceCount = deviceCountCursor || 0; // Use 0 if no records
+    const deviceIdSuffix = deviceCount.toString().padStart(1, '0');
+    const userId = `TT-${countryCode}${Math.floor(Math.random() * 900 + 100)}-${year}${month}${day}${deviceIdSuffix}`;
+
     // Hash the password before saving
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Insert new user record
+    // Insert new user record with `userId` as the `id`
     const result = await r.table('Users')
-      .insert({ name, email, password: hashedPassword, createdAt: new Date() })
+      .insert({ id: userId, name, email, password: hashedPassword, createdAt: new Date() })
       .run(connection);
 
     if (result.inserted === 1) {
-      callback(null, { success: true, message: 'User registered successfully' });
+      console.log("User registered successfully with ID:", userId);
+      callback(null, { success: true, message: 'User registered successfully', id: userId });
     } else {
+      console.log("Failed to register user.");
       callback(null, { success: false, error: 'Failed to register user' });
     }
   } catch (err) {
@@ -69,80 +86,12 @@ async function registerUser(call, callback) {
   }
 }
 
-// gRPC Login Method
-async function login(call, callback) {
-  const { email, password } = call.request;
-  console.log("Login attempt with email:", email);
-
-  let connection = null;
-
-  try {
-    connection = await r.connect(RETHINKDB_CONFIG);
-
-    // Step 1: Filter user by email
-    const cursor = await r.table('Users').filter({ email }).run(connection);
-
-    let user;
-    try {
-      // Step 2: Retrieve the user record
-      user = await cursor.next();
-      console.log("User found:", user);
-    } catch (error) {
-      console.log("User not found");
-      callback(null, { error: 'Invalid email or password' });
-      return;
-    }
-
-    // Step 3: Check if provided password matches hashed password in database
-    const passwordMatch = await bcrypt.compare(password, user.password);
-    console.log("Password match:", passwordMatch);
-
-    if (passwordMatch) {
-      // Step 4: Generate JWT token if passwords match
-      const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, { expiresIn: '4h' });
-      
-      console.log("Generated JWT Token:", token);
-
-      // Step 5: Send the token in the response
-      callback(null, { token, success: true, message: 'Login successful' });
-    } else {
-      console.log("Invalid password");
-      callback(null, { error: 'Invalid email or password', success: false });
-    }
-  } catch (err) {
-    console.error("Error during authentication:", err);
-    callback(null, { error: 'Authentication failed', success: false });
-  } finally {
-    if (connection) connection.close();
-  }
-}
-
-// gRPC VerifyToken Method
-function verifyToken(call, callback) {
-  const { token } = call.request;
-
-  if (!token) {
-    return callback(null, { success: false, error: 'No token provided' });
-  }
-
-  // Verify the JWT token
-  jwt.verify(token, JWT_SECRET, (err, decoded) => {
-    if (err) {
-      callback(null, { success: false, error: 'Invalid or expired token' });
-    } else {
-      // Token is valid, return user info
-      callback(null, { success: true, user: { id: decoded.id, email: decoded.email } });
-    }
-  });
-}
-
 // Start gRPC server
 function main() {
   const server = new grpc.Server();
   server.addService(authProto.AuthService.service, { 
     RegisterUser: registerUser, // Add RegisterUser service
-    Login: login, 
-    VerifyToken: verifyToken 
+    // Add other services (e.g., Login, VerifyToken) as needed
   });
   server.bindAsync('0.0.0.0:50051', grpc.ServerCredentials.createInsecure(), () => {
     console.log('gRPC server running on port 50051');
