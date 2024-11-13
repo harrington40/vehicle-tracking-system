@@ -14,7 +14,7 @@ const packageDefinition = protoLoader.loadSync(PROTO_PATH, {
 const authProto = grpc.loadPackageDefinition(packageDefinition).auth;
 
 const client = new authProto.AuthService(
-  '0.0.0.0:50051', // gRPC server address
+  'localhost:50051', // gRPC server address
   grpc.credentials.createInsecure()
 );
 
@@ -27,10 +27,20 @@ export async function POST(req) {
       if (error) {
         console.error('gRPC error:', error);
         resolve(new Response(JSON.stringify({ error: 'Internal server error' }), { status: 500 }));
-      } else if (response.success) {
-        resolve(new Response(JSON.stringify({ message: response.message, id: response.id }), { status: 200 }));
       } else {
-        resolve(new Response(JSON.stringify({ error: response.error || 'Registration failed' }), { status: 400 }));
+        console.log('gRPC response:', response); // Added log
+
+        // Adjust response handling to match the server response structure
+        if (response.id && response.message) {
+          // Registration was successful
+          resolve(new Response(JSON.stringify({ message: response.message, id: response.id }), { status: 200 }));
+        } else if (response.error) {
+          // Registration failed, return the error message
+          resolve(new Response(JSON.stringify({ error: response.error }), { status: 400 }));
+        } else {
+          // Unknown failure case (should rarely happen with the structured response)
+          resolve(new Response(JSON.stringify({ error: 'Unknown registration error' }), { status: 400 }));
+        }
       }
     });
   });

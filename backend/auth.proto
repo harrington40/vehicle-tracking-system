@@ -15,7 +15,7 @@ message RegisterUserRequest {
 }
 
 message RegisterUserResponse {
-  string userId = 1;     // ID of the newly registered user
+  string id = 1;     // ID of the newly registered user
   string message = 2;    // Success message or error details
   string error = 3;      // Error message if registration fails
 }

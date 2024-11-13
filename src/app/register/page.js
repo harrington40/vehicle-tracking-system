@@ -36,7 +36,9 @@ export default function Register() {
       });
   
       const result = await response.json();
-      if (response.ok && result.success) {  // Check result.success instead of just response.ok
+  
+      // Check if 'id' is present to confirm registration success
+      if (response.ok && result.id) {
         setSuccess(true);
         setFormData({ name: '', email: '', confirmEmail: '', password: '' });
       } else {
