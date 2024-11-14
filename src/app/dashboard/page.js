@@ -14,17 +14,22 @@ const MapPlaceholder = () => (
 const SegmentedGauge = ({ percentage }) => {
   const colors = ["#FF0000", "#FF4500", "#FFA500", "#FFFF00", "#ADFF2F", "#00FF00"];
   const segments = colors.length;
-  const anglePerSegment = 360 / segments;
   const radius = 15.9155;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (percentage / 100) * circumference;
 
   return (
-    <svg width="100" height="100" viewBox="0 0 36 36" style={{ transform: 'rotate(-90deg)' }}>
-      {/* Background circle */}
-      <circle cx="18" cy="18" r={radius} fill="none" stroke="#333" strokeWidth="3.8" />
-      
-      {/* Segments */}
+    <svg width="120" height="120" viewBox="0 0 36 36" style={{ transform: 'rotate(-90deg)' }}>
+      {/* Background circle with radial gradient */}
+      <defs>
+        <radialGradient id="grad" cx="50%" cy="50%" r="50%" fx="50%" fy="50%">
+          <stop offset="0%" style={{ stopColor: "#333" }} />
+          <stop offset="100%" style={{ stopColor: "#000" }} />
+        </radialGradient>
+      </defs>
+      <circle cx="18" cy="18" r={radius} fill="none" stroke="url(#grad)" strokeWidth="3.8" />
+
+      {/* Segments with subtle shadow and gradient effect */}
       {colors.map((color, index) => (
         <circle
           key={index}
@@ -36,11 +41,15 @@ const SegmentedGauge = ({ percentage }) => {
           strokeWidth="3.8"
           strokeDasharray={`${circumference / segments}, ${circumference}`}
           strokeDashoffset={(index * circumference) / segments}
-          style={{ transition: 'stroke-dashoffset 0.5s' }}
+          style={{
+            transition: 'stroke-dashoffset 0.5s',
+            filter: 'drop-shadow(0 0 6px rgba(0,0,0,0.3))', // Adds subtle shadow to each segment
+            strokeLinecap: 'round', // Makes the ends of each segment rounded
+          }}
         />
       ))}
 
-      {/* Foreground circle to represent the percentage */}
+      {/* Foreground circle representing the percentage */}
       <circle
         cx="18"
         cy="18"
@@ -52,16 +61,46 @@ const SegmentedGauge = ({ percentage }) => {
         strokeDashoffset={offset}
       />
 
-      {/* Inner black circle */}
-      <circle cx="18" cy="18" r="10" fill="black" />
+      {/* Inner black circle with subtle pulse animation */}
+      <circle
+        cx="18"
+        cy="18"
+        r="9"
+        fill="black"
+        style={{
+          animation: 'pulse 2s infinite',
+        }}
+      />
 
-      {/* Percentage text */}
-      <text x="18" y="20.35" fill="white" fontSize="0.5em" fontWeight="bold" textAnchor="middle">
+      {/* Percentage text with shadow */}
+      <text
+        x="18"
+        y="20.35"
+        fill="white"
+        fontSize="0.6em"
+        fontWeight="bold"
+        textAnchor="middle"
+        style={{
+          textShadow: '0px 0px 3px rgba(0, 0, 0, 0.5)', // Adds shadow to text
+        }}
+      >
         {percentage}%
       </text>
+      <style>
+        {`
+          /* Pulse animation */
+          @keyframes pulse {
+            0% { r: 9; }
+            50% { r: 10; }
+            100% { r: 9; }
+          }
+        `}
+      </style>
     </svg>
   );
 };
+
+
 
 // Vertical Bar Graph component
 const VerticalBarGraph = () => (
@@ -105,7 +144,11 @@ export default function DashboardPage() {
     <div style={styles.dashboardContainer}>
       {/* Top Row of Cards */}
       <div style={styles.topBottomRow}>
-        <div style={styles.statCard}>
+        <div
+          style={styles.statCard}
+          onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-5px)'}
+          onMouseLeave={(e) => e.currentTarget.style.transform = 'none'}
+        >
           <img src="car-image-url.png" alt="Car" style={styles.carImage} />
         </div>
         <div style={styles.statCard}><p>Top 2</p></div>
@@ -158,9 +201,9 @@ const styles = {
   },
   topBottomRow: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(4, 1fr)', // Adjusts number of cards in each row
-    gap: '10px',
-    padding: '10px 0',
+    gridTemplateColumns: 'repeat(4, 1fr)',
+    gap: '20px',
+    padding: '20px 0',
   },
   content: {
     display: 'flex',
@@ -170,8 +213,8 @@ const styles = {
   },
   sideColumn: {
     display: 'grid',
-    gridTemplateRows: 'repeat(3, 1fr)', // Number of cards on each sidebar
-    gap: '10px',
+    gridTemplateRows: 'repeat(3, 1fr)',
+    gap: '15px',
     width: '15%',
   },
   main: {
@@ -182,47 +225,52 @@ const styles = {
     justifyContent: 'center',
   },
   statCard: {
-    backgroundColor: '#ffffff',
-    borderRadius: '8px',
+    background: 'linear-gradient(145deg, #e0e5ec, #ffffff)', // Light gradient for a modern look
+    borderRadius: '16px',
+    padding: '15px',
     width: '100%',
-    aspectRatio: '1', // Ensures square shape
-    boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)', // Adds shadow
+    maxWidth: '230px',
+    aspectRatio: '1',
+    boxShadow: '0 8px 16px rgba(0, 0, 0, 0.15)', // Elevated shadow
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     textAlign: 'center',
     color: '#2C3E50',
     position: 'relative',
+    transition: 'transform 0.2s ease, box-shadow 0.2s ease', // Smooth transition for hover effect
   },
   carImage: {
-    width: '80%', // Adjust image size
+    width: '80%',
     height: 'auto',
     objectFit: 'cover',
+    borderRadius: '8px',
   },
   mapPlaceholder: {
     width: '100%',
     height: '100%',
-    backgroundColor: '#BDC3C7', // Map loading background color
+    backgroundColor: '#BDC3C7',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: '8px',
+    borderRadius: '16px',
   },
   mapText: {
-    color: '#1E2A38', // Text color for map placeholder
+    color: '#1E2A38',
     fontSize: '1.2em',
+    fontWeight: 'bold',
   },
   barGraph: {
     display: 'flex',
     alignItems: 'flex-end',
-    justifyContent: 'space-between',
+    justifyContent: 'space-around',
     height: '80%',
     width: '100%',
-    padding: '5px',
+    padding: '10px',
   },
   bar: {
-    width: '10%',
-    backgroundColor: '#4A90E2', // Adjust color as needed
+    width: '8%', // Reduced bar width for a sleeker look
+    backgroundColor: '#4A90E2',
     borderRadius: '4px 4px 0 0',
   },
 };

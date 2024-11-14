@@ -5,6 +5,7 @@ const bcrypt = require('bcryptjs');
 const r = require('rethinkdb');
 const fs = require('fs');
 const path = require('path');
+const awsIot = require('aws-iot-device-sdk'); // Add MQTT dependency
 
 // Define the path to your .proto file
 const PROTO_PATH = path.join(__dirname, 'auth.proto');
@@ -17,7 +18,7 @@ const packageDefinition = protoLoader.loadSync(PROTO_PATH, {
 });
 const authProto = grpc.loadPackageDefinition(packageDefinition).auth;
 
-// Load JWT secret from .env.local
+// Load JWT secret and other environment variables
 const envPath = path.join(__dirname, '.env.local');
 const envContent = fs.readFileSync(envPath, 'utf-8').split('\n').reduce((acc, line) => {
   const [key, value] = line.split('=');
@@ -26,6 +27,26 @@ const envContent = fs.readFileSync(envPath, 'utf-8').split('\n').reduce((acc, li
 }, {});
 const JWT_SECRET = envContent.JWT_SECRET || 'your_jwt_secret';
 const RETHINKDB_CONFIG = { host: 'localhost', port: 28015, db: 'vehicle_tracking' };
+
+// MQTT Configuration
+const mqttClient = awsIot.device({
+  keyPath: 'path/to/private-key.pem.key',
+  certPath: 'path/to/certificate.pem.crt',
+  caPath: 'path/to/Amazon-root-CA.pem',
+  clientId: 'YourClientID',
+  host: 'your-aws-iot-endpoint.amazonaws.com'
+});
+
+// Connect to AWS IoT Core and handle MQTT messages
+mqttClient.on('connect', () => {
+  console.log('Connected to AWS IoT');
+  mqttClient.subscribe('vehicle/tracking/#'); // Subscribe to tracking topics
+});
+
+mqttClient.on('message', (topic, payload) => {
+  console.log(`Received message on topic ${topic}:`, payload.toString());
+  // Here you can process or save the payload to the database or notify gRPC clients
+});
 
 // gRPC RegisterUser Method
 async function registerUser(call, callback) {
@@ -36,8 +57,6 @@ async function registerUser(call, callback) {
 
   try {
     connection = await r.connect(RETHINKDB_CONFIG);
-
-    // Check if the user already exists
     const cursor = await r.table('Users').filter({ email }).run(connection);
     const existingUser = await cursor.toArray();
 
@@ -46,23 +65,11 @@ async function registerUser(call, callback) {
       return;
     }
 
-    // Generate `userId` based on specified format
-    const countryCode = 'US';
-    const date = new Date();
-    const year = date.getFullYear().toString().slice(-2);
-    const month = (date.getMonth() + 1).toString().padStart(2, '0');
-    const day = date.getDate().toString().padStart(2, '0');
-    const deviceCount = await r.table('Users')
-      .filter(r.row('id').match(`^TT-${countryCode}\\d{3}-${year}${month}${day}`))
-      .count()
-      .run(connection);
-    const deviceIdSuffix = (deviceCount || 0).toString().padStart(1, '0');
-    const userId = `TT-${countryCode}${Math.floor(Math.random() * 900 + 100)}-${year}${month}${day}${deviceIdSuffix}`;
-
-    // Hash the password before saving
+    // Generate a unique `userId` and hash the password
+    const userId = generateUniqueUserId();
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Insert new user record with `userId` as the `id`
+    // Insert new user record
     const result = await r.table('Users')
       .insert({ id: userId, name, email, password: hashedPassword, createdAt: new Date() })
       .run(connection);
@@ -70,12 +77,13 @@ async function registerUser(call, callback) {
     if (result.inserted === 1) {
       console.log("User registered successfully with ID:", userId);
       callback(null, { success: true, message: 'User registered successfully', id: userId });
+
+      // Optionally, publish a welcome message to MQTT topic for this user
+      mqttClient.publish(`user/${userId}/welcome`, JSON.stringify({ message: "Welcome to our service!" }));
     } else {
-      console.log("Failed to register user.");
       callback(null, { success: false, error: 'Failed to register user' });
     }
   } catch (err) {
-    console.error("Error during registration:", err);
     callback(null, { success: false, error: 'Registration failed' });
   } finally {
     if (connection) connection.close();
@@ -91,8 +99,6 @@ async function login(call, callback) {
 
   try {
     connection = await r.connect(RETHINKDB_CONFIG);
-
-    // Find user by email
     const cursor = await r.table('Users').filter({ email }).run(connection);
     const user = await cursor.next().catch(() => null);
 
@@ -101,12 +107,9 @@ async function login(call, callback) {
       return;
     }
 
-    // Generate JWT token
     const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, { expiresIn: '4h' });
-    console.log("Generated JWT Token:", token);
     callback(null, { token, success: true, message: 'Login successful' });
   } catch (err) {
-    console.error("Error during login:", err);
     callback(null, { error: 'Login failed', token: '' });
   } finally {
     if (connection) connection.close();
@@ -128,6 +131,12 @@ function verifyToken(call, callback) {
       callback(null, { success: true, user: { id: decoded.id, email: decoded.email } });
     }
   });
+}
+
+// Helper function to generate a unique user ID
+function generateUniqueUserId() {
+  // Implement your unique ID generation logic here
+  return 'unique-id';
 }
 
 // Start gRPC server
