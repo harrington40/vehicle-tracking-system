@@ -6,6 +6,8 @@ service AuthService {
   rpc Login (LoginRequest) returns (LoginResponse);
   rpc VerifyToken (TokenRequest) returns (TokenResponse);
   rpc RegisterUser (RegisterUserRequest) returns (RegisterUserResponse);
+  rpc PublishMqttMessage (MqttMessageRequest) returns (MqttMessageResponse); // New method to publish MQTT messages
+  rpc SubscribeMqttTopic (MqttSubscriptionRequest) returns (MqttSubscriptionResponse); // New method to subscribe to MQTT topics
 }
 
 message RegisterUserRequest {
@@ -15,7 +17,7 @@ message RegisterUserRequest {
 }
 
 message RegisterUserResponse {
-  string id = 1;     // ID of the newly registered user
+  string id = 1;         // ID of the newly registered user
   string message = 2;    // Success message or error details
   string error = 3;      // Error message if registration fails
 }
@@ -43,4 +45,24 @@ message TokenResponse {
 message User {
   string id = 1;
   string email = 2;
+}
+
+message MqttMessageRequest {
+  string topic = 1;       // MQTT topic to publish to
+  string message = 2;     // Message payload
+}
+
+message MqttMessageResponse {
+  bool success = 1;       // Whether the message was published successfully
+  string error = 2;       // Error message if publication fails
+}
+
+message MqttSubscriptionRequest {
+  string topic = 1;       // MQTT topic to subscribe to
+}
+
+message MqttSubscriptionResponse {
+  bool success = 1;       // Whether the subscription was successful
+  string error = 2;       // Error message if subscription fails
+  string message = 3;     // Received message payload if applicable
 }
