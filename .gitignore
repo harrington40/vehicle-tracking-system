@@ -39,3 +39,4 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 Iot-SDK/aws-iot-device-sdk-js-v2/
+aws.txt
