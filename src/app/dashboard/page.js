@@ -1,138 +1,48 @@
-"use client"; // Client-side only
+"use client";
 
-import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
-// Map Placeholder component
-const MapPlaceholder = () => (
-  <div style={styles.mapPlaceholder}>
-    <p style={styles.mapText}>Map Loading...</p>
-  </div>
-);
-
-// Custom Segmented Gauge Component
-const SegmentedGauge = ({ percentage }) => {
-  const colors = ["#FF0000", "#FF4500", "#FFA500", "#FFFF00", "#ADFF2F", "#00FF00"];
-  const segments = colors.length;
-  const radius = 15.9155;
-  const circumference = 2 * Math.PI * radius;
-  const offset = circumference - (percentage / 100) * circumference;
-
-  return (
-    <svg width="120" height="120" viewBox="0 0 36 36" style={{ transform: 'rotate(-90deg)' }}>
-      {/* Background circle with radial gradient */}
-      <defs>
-        <radialGradient id="grad" cx="50%" cy="50%" r="50%" fx="50%" fy="50%">
-          <stop offset="0%" style={{ stopColor: "#333" }} />
-          <stop offset="100%" style={{ stopColor: "#000" }} />
-        </radialGradient>
-      </defs>
-      <circle cx="18" cy="18" r={radius} fill="none" stroke="url(#grad)" strokeWidth="3.8" />
-
-      {/* Segments with subtle shadow and gradient effect */}
-      {colors.map((color, index) => (
-        <circle
-          key={index}
-          cx="18"
-          cy="18"
-          r={radius}
-          fill="none"
-          stroke={color}
-          strokeWidth="3.8"
-          strokeDasharray={`${circumference / segments}, ${circumference}`}
-          strokeDashoffset={(index * circumference) / segments}
-          style={{
-            transition: 'stroke-dashoffset 0.5s',
-            filter: 'drop-shadow(0 0 6px rgba(0,0,0,0.3))', // Adds subtle shadow to each segment
-            strokeLinecap: 'round', // Makes the ends of each segment rounded
-          }}
-        />
-      ))}
-
-      {/* Foreground circle representing the percentage */}
-      <circle
-        cx="18"
-        cy="18"
-        r={radius}
-        fill="none"
-        stroke="black"
-        strokeWidth="3.8"
-        strokeDasharray={circumference}
-        strokeDashoffset={offset}
-      />
-
-      {/* Inner black circle with subtle pulse animation */}
-      <circle
-        cx="18"
-        cy="18"
-        r="9"
-        fill="black"
-        style={{
-          animation: 'pulse 2s infinite',
-        }}
-      />
-
-      {/* Percentage text with shadow */}
-      <text
-        x="18"
-        y="20.35"
-        fill="white"
-        fontSize="0.6em"
-        fontWeight="bold"
-        textAnchor="middle"
-        style={{
-          textShadow: '0px 0px 3px rgba(0, 0, 0, 0.5)', // Adds shadow to text
-        }}
-      >
-        {percentage}%
-      </text>
-      <style>
-        {`
-          /* Pulse animation */
-          @keyframes pulse {
-            0% { r: 9; }
-            50% { r: 10; }
-            100% { r: 9; }
-          }
-        `}
-      </style>
-    </svg>
-  );
+// Mock Data
+const mockUser = {
+  name: "John Doe",
+  avatar: "https://via.placeholder.com/40", // Replace with actual avatar URL
 };
 
+const mockVehicleData = [
+  { id: "V001", speed: "65 mph", status: "Active", condition: "Good", usage: 240 },
+  { id: "V002", speed: "50 mph", status: "Inactive", condition: "Requires Maintenance", usage: 150 },
+  { id: "V003", speed: "72 mph", status: "Active", condition: "Good", usage: 300 },
+];
 
+const lastMaintenanceData = [
+  { vehicle: "Truck 450", time: "9:20 AM", alertType: "Idle Stop", alertCondition: "Idled for 46 minutes" },
+  { vehicle: "Van 320", time: "10:18 AM", alertType: "Idle Stop", alertCondition: "Idled for 20 minutes" },
+  { vehicle: "Truck 575", time: "12:24 PM", alertType: "Posted Speed", alertCondition: "13 mph over speed limit" },
+  { vehicle: "Van 315", time: "2:42 PM", alertType: "Tampering", alertCondition: "Device lost external power" },
+  { vehicle: "Sedan 105", time: "2:59 PM", alertType: "Long Stop", alertCondition: "Stopped for 4 days" },
+];
 
-// Vertical Bar Graph component
-const VerticalBarGraph = () => (
-  <div style={styles.barGraph}>
-    {[60, 80, 40, 70, 90, 50].map((height, index) => (
-      <div key={index} style={{ ...styles.bar, height: `${height}%` }}></div>
-    ))}
-  </div>
-);
-
-export default function DashboardPage() {
+const DashboardPage = () => {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
+  const [vehicles, setVehicles] = useState(mockVehicleData); // Mock vehicle data
 
   useEffect(() => {
-    fetch('/api/verify-token', {
-      method: 'POST',
-      credentials: 'include',
+    // Simulate token verification
+    fetch("/api/verify-token", {
+      method: "POST",
+      credentials: "include",
     })
       .then((response) => {
-        if (response.ok) {
-          return response.json();
-        }
-        throw new Error('Unauthorized');
+        if (response.ok) return response.json();
+        throw new Error("Unauthorized");
       })
-      .then(() => {
-        setLoading(false);
-      })
+      .then(() => setLoading(false))
       .catch((error) => {
         console.error("API call error:", error);
         setLoading(false);
-        router.push('/login');
+        router.push("/login");
       });
   }, [router]);
 
@@ -142,135 +52,270 @@ export default function DashboardPage() {
 
   return (
     <div style={styles.dashboardContainer}>
-      {/* Top Row of Cards */}
-      <div style={styles.topBottomRow}>
-        <div
-          style={styles.statCard}
-          onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-5px)'}
-          onMouseLeave={(e) => e.currentTarget.style.transform = 'none'}
-        >
-          <img src="car-image-url.png" alt="Car" style={styles.carImage} />
+      {/* Sidebar */}
+      <aside style={styles.sidebar}>
+        <ul style={styles.navList}>
+          <li style={styles.navItem}>🏠</li>
+          <li style={styles.navItem}>📊</li>
+          <li style={styles.navItem}>📍</li>
+          <li style={styles.navItem}>⚙️</li>
+        </ul>
+      </aside>
+
+      {/* Header */}
+      <header style={styles.header}>
+        <div style={styles.userInfo}>
+          <img src={mockUser.avatar} alt="User Avatar" style={styles.avatar} />
+          <span style={styles.userName}>{mockUser.name}</span>
         </div>
-        <div style={styles.statCard}><p>Top 2</p></div>
-        <div style={styles.statCard}><p>Top 3</p></div>
-        <div style={styles.statCard}><p>Top 4</p></div>
+      </header>
+
+      {/* Main Content */}
+      <div style={styles.contentContainer}>
+        {/* Left Section */}
+        <section style={styles.leftContainer}>
+          <h3>Vehicle Performance</h3>
+          {vehicles.map((vehicle) => (
+            <div key={vehicle.id} style={styles.vehicleCard}>
+              <p style={styles.vehicleTitle}>
+                {vehicle.id} - {vehicle.status}
+              </p>
+              <HorizontalBarGraph value={vehicle.usage} />
+            </div>
+          ))}
+        </section>
+
+        {/* Center Section (Map) */}
+        <section style={styles.centerContainer}>
+          <h3>Map (All Vehicles)</h3>
+          <div style={styles.mapPlaceholder}>
+            <p style={styles.mapText}>Map Loading...</p>
+          </div>
+        </section>
+
+        {/* Right Section */}
+        <section style={styles.rightContainer}>
+          <h3>Quick Metrics</h3>
+          <div style={styles.card}>Total Active Vehicles: 25</div>
+          <div style={styles.card}>Pending Maintenance Alerts: 3</div>
+          <div style={styles.card}>Miles Driven Today: 1500</div>
+        </section>
       </div>
 
-      <div style={styles.content}>
-        {/* Left Side Cards */}
-        <div style={styles.sideColumn}>
-          <div style={styles.statCard}><SegmentedGauge percentage={75} /></div>
-          <div style={styles.statCard}><SegmentedGauge percentage={50} /></div>
-          <div style={styles.statCard}><SegmentedGauge percentage={85} /></div>
+      {/* Bottom Section */}
+      <div style={styles.bottomContainer}>
+        <div style={styles.card}>
+          <h4>Recent Alerts (All Vehicles)</h4>
+          <div style={styles.tableContainer}> {/* This wraps the table */}
+            <table style={styles.table}>
+              <thead>
+                <tr>
+                  <th style={styles.tableHeader}>Vehicle</th>
+                  <th style={styles.tableHeader}>Time</th>
+                  <th style={styles.tableHeader}>Alert Type</th>
+                  <th style={styles.tableHeader}>Alert Condition</th>
+                </tr>
+              </thead>
+              <tbody>
+                {lastMaintenanceData.map((entry, index) => (
+                  <tr key={index}>
+                    <td style={styles.tableCell}>{entry.vehicle}</td>
+                    <td style={styles.tableCell}>{entry.time}</td>
+                    <td style={styles.tableCell}>{entry.alertType}</td>
+                    <td style={styles.tableCell}>{entry.alertCondition}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
-
-        {/* Center Map Section */}
-        <main style={styles.main}>
-          <MapPlaceholder />
-        </main>
-
-        {/* Right Side Cards */}
-        <div style={styles.sideColumn}>
-          <div style={styles.statCard}><SegmentedGauge percentage={30} /></div>
-          <div style={styles.statCard}><SegmentedGauge percentage={65} /></div>
-          <div style={styles.statCard}><SegmentedGauge percentage={90} /></div>
-        </div>
-      </div>
-
-      {/* Bottom Row of Cards */}
-      <div style={styles.topBottomRow}>
-        <div style={styles.statCard}><VerticalBarGraph /></div>
-        <div style={styles.statCard}><SegmentedGauge percentage={55} /></div>
-        <div style={styles.statCard}><SegmentedGauge percentage={35} /></div>
-        <div style={styles.statCard}><VerticalBarGraph /></div>
+        <div style={styles.card}>Fuel Consumption: 120 Gallons</div>
+        <div style={styles.card}>Average Speed: 60 mph</div>
       </div>
     </div>
   );
-}
+};
 
-// Styles for all components
+// Horizontal Bar Graph Component
+const HorizontalBarGraph = ({ value }) => (
+  <div style={styles.horizontalGraph}>
+    <div
+      style={{
+        ...styles.horizontalBar,
+        width: `${value / 2}px`, // Adjust width based on value
+        backgroundColor: value > 200 ? "#4CAF50" : "#FF9800", // Dynamic coloring
+      }}
+    ></div>
+    <span style={styles.barLabel}>{value} pts</span>
+  </div>
+);
+
 const styles = {
   dashboardContainer: {
-    display: 'flex',
-    flexDirection: 'column',
-    height: '100vh',
-    fontFamily: 'Arial, sans-serif',
-    color: '#333',
-    backgroundColor: '#B4D5C2', // Greenish-blue background color
-    padding: '10px',
+    display: "flex",
+    flexDirection: "column",
+    fontFamily: "Arial, sans-serif",
+    backgroundColor: "#f4f4f9",
+    height: "100vh",
+    width: "100%",
+    overflow: "hidden",
   },
-  topBottomRow: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(4, 1fr)',
-    gap: '20px',
-    padding: '20px 0',
+  sidebar: {
+    position: "fixed",
+    width: "60px",
+    height: "100vh",
+    backgroundColor: "#2C3E50",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: "10px 0",
+    zIndex: 1000,
   },
-  content: {
-    display: 'flex',
+  navList: {
+    listStyleType: "none",
+    padding: 0,
+    margin: 0,
+  },
+  navItem: {
+    padding: "15px 0",
+    fontSize: "24px",
+    cursor: "pointer",
+    color: "#fff",
+  },
+  header: {
+    display: "flex",
+    justifyContent: "flex-end",
+    alignItems: "center",
+    padding: "10px 20px",
+    backgroundColor: "#fff",
+    boxShadow: "0 2px 5px rgba(0,0,0,0.1)",
+  },
+  userInfo: {
+    display: "flex",
+    alignItems: "center",
+    gap: "10px",
+  },
+  avatar: {
+    width: "40px",
+    height: "40px",
+    borderRadius: "50%",
+  },
+  userName: {
+    fontSize: "16px",
+    fontWeight: "bold",
+    color: "#333",
+  },
+  contentContainer: {
+    display: "flex",
     flex: 1,
-    padding: '20px 0',
-    alignItems: 'center',
+    marginLeft: "80px",
+    padding: "20px",
+    gap: "20px",
   },
-  sideColumn: {
-    display: 'grid',
-    gridTemplateRows: 'repeat(3, 1fr)',
-    gap: '15px',
-    width: '15%',
-  },
-  main: {
+  leftContainer: {
     flex: 1,
-    padding: '20px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
+    padding: "10px",
+    backgroundColor: "#fff",
+    boxShadow: "0 2px 5px rgba(0,0,0,0.1)",
+    borderRadius: "8px",
+    display: "flex",
+    flexDirection: "column",
+    gap: "15px",
   },
-  statCard: {
-    background: 'linear-gradient(145deg, #e0e5ec, #ffffff)', // Light gradient for a modern look
-    borderRadius: '16px',
-    padding: '15px',
-    width: '100%',
-    maxWidth: '230px',
-    aspectRatio: '1',
-    boxShadow: '0 8px 16px rgba(0, 0, 0, 0.15)', // Elevated shadow
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    textAlign: 'center',
-    color: '#2C3E50',
-    position: 'relative',
-    transition: 'transform 0.2s ease, box-shadow 0.2s ease', // Smooth transition for hover effect
+  vehicleCard: {
+    backgroundColor: "#f9f9f9",
+    padding: "10px",
+    borderRadius: "8px",
+    boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
   },
-  carImage: {
-    width: '80%',
-    height: 'auto',
-    objectFit: 'cover',
-    borderRadius: '8px',
+  vehicleTitle: {
+    fontWeight: "bold",
+    marginBottom: "5px",
+  },
+  horizontalGraph: {
+    display: "flex",
+    alignItems: "center",
+    gap: "10px",
+  },
+  horizontalBar: {
+    height: "20px",
+    borderRadius: "4px",
+  },
+  barLabel: {
+    fontSize: "0.9em",
+  },
+  centerContainer: {
+    flex: 2,
+    backgroundColor: "#fff",
+    boxShadow: "0 2px 5px rgba(0,0,0,0.1)",
+    borderRadius: "8px",
+    textAlign: "center",
+    padding: "10px",
   },
   mapPlaceholder: {
-    width: '100%',
-    height: '100%',
-    backgroundColor: '#BDC3C7',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: '16px',
+    height: "300px",
+    backgroundColor: "#BDC3C7",
+    borderRadius: "8px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
   },
   mapText: {
-    color: '#1E2A38',
-    fontSize: '1.2em',
-    fontWeight: 'bold',
+    color: "#2C3E50",
+    fontSize: "18px",
   },
-  barGraph: {
-    display: 'flex',
-    alignItems: 'flex-end',
-    justifyContent: 'space-around',
-    height: '80%',
-    width: '100%',
-    padding: '10px',
+  rightContainer: {
+    flex: 1,
+    backgroundColor: "#fff",
+    boxShadow: "0 2px 5px rgba(0,0,0,0.1)",
+    borderRadius: "8px",
+    padding: "10px",
+    display: "flex",
+    flexDirection: "column",
+    gap: "15px",
   },
-  bar: {
-    width: '8%', // Reduced bar width for a sleeker look
-    backgroundColor: '#4A90E2',
-    borderRadius: '4px 4px 0 0',
+  bottomContainer: {
+    marginLeft: "80px",
+    marginTop: "20px",
+    padding: "10px",
+    backgroundColor: "#fff",
+    boxShadow: "0 2px 5px rgba(0,0,0,0.1)",
+    borderRadius: "8px",
+    display: "flex",
+    gap: "15px",
+    justifyContent: "space-between",
+  },
+  tableContainer: {
+    maxHeight: "200px", // Adjust this value to control the height of the table
+    overflowY: "auto", // Enables vertical scrolling for the table
+    border: "1px solid #ddd", // Optional: Adds a border around the table container
+  },
+  table: {
+    width: "100%",
+    borderCollapse: "collapse",
+  },
+  tableHeader: {
+    backgroundColor: "#f4f4f9",
+    fontWeight: "bold",
+    padding: "10px",
+    borderBottom: "1px solid #ddd",
+  },
+  tableCell: {
+    padding: "10px",
+    borderBottom: "1px solid #ddd",
+    textAlign: "left",
+  },
+  card: {
+    flex: 1,
+    padding: "15px",
+    backgroundColor: "#f9f9f9",
+    borderRadius: "8px",
+    boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+    textAlign: "center",
+    fontWeight: "bold",
+    fontSize: "14px",
   },
 };
+
+export default DashboardPage;
