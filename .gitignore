@@ -38,3 +38,4 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+Iot-SDK/aws-iot-device-sdk-js-v2/
