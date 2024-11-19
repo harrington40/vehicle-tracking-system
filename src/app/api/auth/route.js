@@ -11,79 +11,46 @@ const packageDefinition = protoLoader.loadSync(PROTO_PATH, {
   oneofs: true,
 });
 const authProto = grpc.loadPackageDefinition(packageDefinition).auth;
-
-const client = new authProto.AuthService(
-  'localhost:50051',
-  grpc.credentials.createInsecure()
-);
+const client = new authProto.AuthService('0.0.0.0:50051', grpc.credentials.createInsecure());
 
 export async function POST(req) {
-  try {
-    const { email, password } = await req.json(); // Parse the request body
+  const { email, password } = await req.json();
 
-    if (!email || !password) {
-      // Return early if required fields are missing
-      return new Response(JSON.stringify({ error: 'Email and password are required.' }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' },
-      });
-    }
-
-    return new Promise((resolve) => {
-      client.Login({ email, password }, (error, response) => {
-        if (error) {
-          console.error('gRPC error:', error);
-          resolve(
-            new Response(JSON.stringify({ error: 'Internal server error.' }), {
-              status: 500,
-              headers: { 'Content-Type': 'application/json' },
-            })
-          );
-        } else if (response && response.token) {
-          resolve(
-            new Response(
-              JSON.stringify({
-                message: 'Login successful.',
-                token: response.token,
-              }),
-              {
-                status: 200,
-                headers: { 'Content-Type': 'application/json' },
-              }
-            )
-          );
-        } else if (response && response.error) {
-          resolve(
-            new Response(JSON.stringify({ error: response.error }), {
-              status: 401,
-              headers: { 'Content-Type': 'application/json' },
-            })
-          );
-        } else {
-          resolve(
-            new Response(JSON.stringify({ error: 'Unexpected server response.' }), {
-              status: 500,
-              headers: { 'Content-Type': 'application/json' },
-            })
-          );
-        }
-      });
-    });
-  } catch (err) {
-    console.error('Unexpected error in POST handler:', err);
-    return new Response(JSON.stringify({ error: 'An unexpected error occurred.' }), {
-      status: 500,
+  if (!email || !password) {
+    return new Response(JSON.stringify({ error: 'Email and password are required.' }), {
+      status: 400,
       headers: { 'Content-Type': 'application/json' },
     });
   }
-}
 
-export async function GET(req) {
-  return new Response(
-    JSON.stringify({ message: 'This endpoint supports POST for authentication.' }),
-    {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' },
-    }
-  );
+  return new Promise((resolve) => {
+    client.Login({ email, password }, (error, response) => {
+      if (error) {
+        console.error('gRPC Error:', error);
+        resolve(
+          new Response(JSON.stringify({ error: 'Internal server error.' }), {
+            status: 500,
+            headers: { 'Content-Type': 'application/json' },
+          })
+        );
+      } else if (response && response.token) {
+        resolve(
+          new Response(JSON.stringify({ message: 'Login successful.' }), {
+            status: 200,
+            headers: {
+              'Content-Type': 'application/json',
+              'Set-Cookie': `token=${response.token}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=3600`,
+            },
+          })
+        );
+      } else {
+        resolve(
+          new Response(JSON.stringify({ error: response.error || 'Invalid credentials.' }), {
+            status: 401,
+            headers: { 'Content-Type': 'application/json' },
+          })
+        );
+      }
+    });
+  });
 }
