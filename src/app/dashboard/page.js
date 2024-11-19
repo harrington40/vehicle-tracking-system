@@ -105,8 +105,8 @@ const DashboardPage = () => {
       {/* Bottom Section */}
       <div style={styles.bottomContainer}>
         <div style={styles.card}>
-          <h4>Recent Alerts (All Vehicles)</h4>
-          <div style={styles.tableContainer}> {/* This wraps the table */}
+          <h4 style={styles.tableTitle}>Recent Alerts (All Vehicles)</h4>
+          <div style={styles.tableContainer}>
             <table style={styles.table}>
               <thead>
                 <tr>
@@ -129,8 +129,8 @@ const DashboardPage = () => {
             </table>
           </div>
         </div>
-        <div style={styles.card}>Fuel Consumption: 120 Gallons</div>
-        <div style={styles.card}>Average Speed: 60 mph</div>
+        <div style={styles.lightGreenCard}>Fuel Consumption: <strong>120 Gallons</strong></div>
+        <div style={styles.card}>Average Speed: <strong>60 mph</strong></div>
       </div>
     </div>
   );
@@ -286,11 +286,6 @@ const styles = {
     gap: "15px",
     justifyContent: "space-between",
   },
-  tableContainer: {
-    maxHeight: "200px", // Adjust this value to control the height of the table
-    overflowY: "auto", // Enables vertical scrolling for the table
-    border: "1px solid #ddd", // Optional: Adds a border around the table container
-  },
   table: {
     width: "100%",
     borderCollapse: "collapse",
@@ -310,6 +305,17 @@ const styles = {
     flex: 1,
     padding: "15px",
     backgroundColor: "#f9f9f9",
+    borderRadius: "8px",
+    boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+    textAlign: "center",
+    fontWeight: "bold",
+    fontSize: "14px",
+  },
+  lightGreenCard: {
+    flex: 1,
+    padding: "15px",
+    backgroundColor: "#4CAF50", // Light green color
+    color: "#fff", // White font
     borderRadius: "8px",
     boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
     textAlign: "center",

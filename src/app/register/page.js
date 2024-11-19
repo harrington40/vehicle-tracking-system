@@ -40,8 +40,11 @@ export default function Register() {
   
       const result = await response.json();
   
-      // Check if 'id' is present to confirm registration success
-      if (response.ok && result.id) {
+      if (response.status === 429) {
+        // Handle rate-limiting error
+        setError('Too many registration attempts. Please try again later.');
+      } else if (response.ok && result.id) {
+        // Handle successful registration
         setSuccess(true);
         setFormData({ name: '', email: '', confirmEmail: '', password: '' });
 
@@ -50,9 +53,11 @@ export default function Register() {
           router.push('/login'); // Redirect to the login page
         }, 1000);
       } else {
+        // Handle other errors from the backend
         setError(result.error || 'Registration failed');
       }
     } catch (err) {
+      // Handle network or unexpected errors
       setError('Network error, please try again.');
     } finally {
       setLoading(false);
