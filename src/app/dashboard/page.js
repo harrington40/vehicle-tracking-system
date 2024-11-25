@@ -1,14 +1,11 @@
 "use client"; // Client-side only
 
-import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import dynamic from "next/dynamic";
 
-// Map Placeholder component
-const MapPlaceholder = () => (
-  <div style={styles.mapPlaceholder}>
-    <p style={styles.mapText}>Map Loading...</p>
-  </div>
-);
+// Dynamically import DynamicMap to avoid SSR issues
+const DynamicMap = dynamic(() => import("../dynamicMap/page"), { ssr: false });
 
 // Custom Segmented Gauge Component
 const SegmentedGauge = ({ percentage }) => {
@@ -19,8 +16,7 @@ const SegmentedGauge = ({ percentage }) => {
   const offset = circumference - (percentage / 100) * circumference;
 
   return (
-    <svg width="120" height="120" viewBox="0 0 36 36" style={{ transform: 'rotate(-90deg)' }}>
-      {/* Background circle with radial gradient */}
+    <svg width="120" height="120" viewBox="0 0 36 36" style={{ transform: "rotate(-90deg)" }}>
       <defs>
         <radialGradient id="grad" cx="50%" cy="50%" r="50%" fx="50%" fy="50%">
           <stop offset="0%" style={{ stopColor: "#333" }} />
@@ -28,8 +24,6 @@ const SegmentedGauge = ({ percentage }) => {
         </radialGradient>
       </defs>
       <circle cx="18" cy="18" r={radius} fill="none" stroke="url(#grad)" strokeWidth="3.8" />
-
-      {/* Segments with subtle shadow and gradient effect */}
       {colors.map((color, index) => (
         <circle
           key={index}
@@ -42,14 +36,12 @@ const SegmentedGauge = ({ percentage }) => {
           strokeDasharray={`${circumference / segments}, ${circumference}`}
           strokeDashoffset={(index * circumference) / segments}
           style={{
-            transition: 'stroke-dashoffset 0.5s',
-            filter: 'drop-shadow(0 0 6px rgba(0,0,0,0.3))', // Adds subtle shadow to each segment
-            strokeLinecap: 'round', // Makes the ends of each segment rounded
+            transition: "stroke-dashoffset 0.5s",
+            filter: "drop-shadow(0 0 6px rgba(0,0,0,0.3))",
+            strokeLinecap: "round",
           }}
         />
       ))}
-
-      {/* Foreground circle representing the percentage */}
       <circle
         cx="18"
         cy="18"
@@ -60,19 +52,15 @@ const SegmentedGauge = ({ percentage }) => {
         strokeDasharray={circumference}
         strokeDashoffset={offset}
       />
-
-      {/* Inner black circle with subtle pulse animation */}
       <circle
         cx="18"
         cy="18"
         r="9"
         fill="black"
         style={{
-          animation: 'pulse 2s infinite',
+          animation: "pulse 2s infinite",
         }}
       />
-
-      {/* Percentage text with shadow */}
       <text
         x="18"
         y="20.35"
@@ -81,14 +69,13 @@ const SegmentedGauge = ({ percentage }) => {
         fontWeight="bold"
         textAnchor="middle"
         style={{
-          textShadow: '0px 0px 3px rgba(0, 0, 0, 0.5)', // Adds shadow to text
+          textShadow: "0px 0px 3px rgba(0, 0, 0, 0.5)",
         }}
       >
         {percentage}%
       </text>
       <style>
         {`
-          /* Pulse animation */
           @keyframes pulse {
             0% { r: 9; }
             50% { r: 10; }
@@ -99,8 +86,6 @@ const SegmentedGauge = ({ percentage }) => {
     </svg>
   );
 };
-
-
 
 // Vertical Bar Graph component
 const VerticalBarGraph = () => (
@@ -116,15 +101,15 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch('/api/verify-token', {
-      method: 'POST',
-      credentials: 'include',
+    fetch("/api/verify-token", {
+      method: "POST",
+      credentials: "include",
     })
       .then((response) => {
         if (response.ok) {
           return response.json();
         }
-        throw new Error('Unauthorized');
+        throw new Error("Unauthorized");
       })
       .then(() => {
         setLoading(false);
@@ -132,7 +117,7 @@ export default function DashboardPage() {
       .catch((error) => {
         console.error("API call error:", error);
         setLoading(false);
-        router.push('/login');
+        router.push("/login");
       });
   }, [router]);
 
@@ -144,45 +129,67 @@ export default function DashboardPage() {
     <div style={styles.dashboardContainer}>
       {/* Top Row of Cards */}
       <div style={styles.topBottomRow}>
-        <div
-          style={styles.statCard}
-          onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-5px)'}
-          onMouseLeave={(e) => e.currentTarget.style.transform = 'none'}
-        >
+        <div style={styles.statCard}>
           <img src="car-image-url.png" alt="Car" style={styles.carImage} />
         </div>
-        <div style={styles.statCard}><p>Top 2</p></div>
-        <div style={styles.statCard}><p>Top 3</p></div>
-        <div style={styles.statCard}><p>Top 4</p></div>
+        <div style={styles.statCard}>
+          <p>Top 2</p>
+        </div>
+        <div style={styles.statCard}>
+          <p>Top 3</p>
+        </div>
+        <div style={styles.statCard}>
+          <p>Top 4</p>
+        </div>
       </div>
 
       <div style={styles.content}>
         {/* Left Side Cards */}
         <div style={styles.sideColumn}>
-          <div style={styles.statCard}><SegmentedGauge percentage={75} /></div>
-          <div style={styles.statCard}><SegmentedGauge percentage={50} /></div>
-          <div style={styles.statCard}><SegmentedGauge percentage={85} /></div>
+          <div style={styles.statCard}>
+            <SegmentedGauge percentage={75} />
+          </div>
+          <div style={styles.statCard}>
+            <SegmentedGauge percentage={50} />
+          </div>
+          <div style={styles.statCard}>
+            <SegmentedGauge percentage={85} />
+          </div>
         </div>
 
         {/* Center Map Section */}
         <main style={styles.main}>
-          <MapPlaceholder />
+          <DynamicMap />
         </main>
 
         {/* Right Side Cards */}
         <div style={styles.sideColumn}>
-          <div style={styles.statCard}><SegmentedGauge percentage={30} /></div>
-          <div style={styles.statCard}><SegmentedGauge percentage={65} /></div>
-          <div style={styles.statCard}><SegmentedGauge percentage={90} /></div>
+          <div style={styles.statCard}>
+            <SegmentedGauge percentage={30} />
+          </div>
+          <div style={styles.statCard}>
+            <SegmentedGauge percentage={65} />
+          </div>
+          <div style={styles.statCard}>
+            <SegmentedGauge percentage={90} />
+          </div>
         </div>
       </div>
 
       {/* Bottom Row of Cards */}
       <div style={styles.topBottomRow}>
-        <div style={styles.statCard}><VerticalBarGraph /></div>
-        <div style={styles.statCard}><SegmentedGauge percentage={55} /></div>
-        <div style={styles.statCard}><SegmentedGauge percentage={35} /></div>
-        <div style={styles.statCard}><VerticalBarGraph /></div>
+        <div style={styles.statCard}>
+          <VerticalBarGraph />
+        </div>
+        <div style={styles.statCard}>
+          <SegmentedGauge percentage={55} />
+        </div>
+        <div style={styles.statCard}>
+          <SegmentedGauge percentage={35} />
+        </div>
+        <div style={styles.statCard}>
+          <VerticalBarGraph />
+        </div>
       </div>
     </div>
   );
@@ -191,86 +198,72 @@ export default function DashboardPage() {
 // Styles for all components
 const styles = {
   dashboardContainer: {
-    display: 'flex',
-    flexDirection: 'column',
-    height: '100vh',
-    fontFamily: 'Arial, sans-serif',
-    color: '#333',
-    backgroundColor: '#B4D5C2', // Greenish-blue background color
-    padding: '10px',
+    display: "flex",
+    flexDirection: "column",
+    height: "100vh",
+    fontFamily: "Arial, sans-serif",
+    color: "#333",
+    backgroundColor: "#B4D5C2",
+    padding: "10px",
   },
   topBottomRow: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(4, 1fr)',
-    gap: '20px',
-    padding: '20px 0',
+    display: "grid",
+    gridTemplateColumns: "repeat(4, 1fr)",
+    gap: "20px",
+    padding: "20px 0",
   },
   content: {
-    display: 'flex',
+    display: "flex",
     flex: 1,
-    padding: '20px 0',
-    alignItems: 'center',
+    padding: "20px 0",
+    alignItems: "center",
   },
   sideColumn: {
-    display: 'grid',
-    gridTemplateRows: 'repeat(3, 1fr)',
-    gap: '15px',
-    width: '15%',
+    display: "grid",
+    gridTemplateRows: "repeat(3, 1fr)",
+    gap: "15px",
+    width: "15%",
   },
   main: {
     flex: 1,
-    padding: '20px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
+    padding: "20px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
   },
   statCard: {
-    background: 'linear-gradient(145deg, #e0e5ec, #ffffff)', // Light gradient for a modern look
-    borderRadius: '16px',
-    padding: '15px',
-    width: '100%',
-    maxWidth: '230px',
-    aspectRatio: '1',
-    boxShadow: '0 8px 16px rgba(0, 0, 0, 0.15)', // Elevated shadow
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    textAlign: 'center',
-    color: '#2C3E50',
-    position: 'relative',
-    transition: 'transform 0.2s ease, box-shadow 0.2s ease', // Smooth transition for hover effect
+    background: "linear-gradient(145deg, #e0e5ec, #ffffff)",
+    borderRadius: "16px",
+    padding: "15px",
+    width: "100%",
+    maxWidth: "230px",
+    aspectRatio: "1",
+    boxShadow: "0 8px 16px rgba(0, 0, 0, 0.15)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    textAlign: "center",
+    color: "#2C3E50",
+    position: "relative",
+    transition: "transform 0.2s ease, box-shadow 0.2s ease",
   },
   carImage: {
-    width: '80%',
-    height: 'auto',
-    objectFit: 'cover',
-    borderRadius: '8px',
-  },
-  mapPlaceholder: {
-    width: '100%',
-    height: '100%',
-    backgroundColor: '#BDC3C7',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: '16px',
-  },
-  mapText: {
-    color: '#1E2A38',
-    fontSize: '1.2em',
-    fontWeight: 'bold',
+    width: "80%",
+    height: "auto",
+    objectFit: "cover",
+    borderRadius: "8px",
   },
   barGraph: {
-    display: 'flex',
-    alignItems: 'flex-end',
-    justifyContent: 'space-around',
-    height: '80%',
-    width: '100%',
-    padding: '10px',
+    display: "flex",
+    alignItems: "flex-end",
+    justifyContent: "space-around",
+    height: "80%",
+    width: "100%",
+    padding: "10px",
   },
   bar: {
-    width: '8%', // Reduced bar width for a sleeker look
-    backgroundColor: '#4A90E2',
-    borderRadius: '4px 4px 0 0',
+    width: "8%",
+    backgroundColor: "#4A90E2",
+    borderRadius: "4px 4px 0 0",
   },
 };

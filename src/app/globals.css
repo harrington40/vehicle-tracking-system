@@ -2,6 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
+
 /* Define default colors for light mode */
 :root {
   --background: #B4D5C2; /* Light greenish-blue background for the dashboard */
