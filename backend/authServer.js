@@ -5,12 +5,28 @@ const bcrypt = require('bcryptjs');
 const mqtt = require('mqtt');
 const fetch = require('node-fetch');
 const path = require('path');
+const r = require('rethinkdb');
 
 // Constants
 const PROTO_PATH = path.join(__dirname, 'auth.proto');
-const JWT_SECRET = 'your_jwt_secret'; // Store securely in environment variables
+const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret'; // Store securely in environment variables
 const MQTT_BROKER_URL = 'mqtt://localhost'; // Replace with your MQTT broker URL
 const OSRM_BASE_URL = 'http://localhost:5000'; // Replace with your OSRM instance URL
+const DB_HOST = process.env.DB_HOST || 'localhost';
+const DB_PORT = process.env.DB_PORT || 28015;
+const DB_NAME = 'vehicle_tracking';
+
+// RethinkDB Connection
+let dbConnection;
+
+async function connectToDB() {
+  try {
+    dbConnection = await r.connect({ host: DB_HOST, port: DB_PORT, db: DB_NAME });
+    console.log('Connected to RethinkDB');
+  } catch (error) {
+    console.error('Failed to connect to RethinkDB:', error);
+  }
+}
 
 // Load Proto File
 const packageDefinition = protoLoader.loadSync(PROTO_PATH, {
@@ -22,56 +38,76 @@ const packageDefinition = protoLoader.loadSync(PROTO_PATH, {
 });
 const authProto = grpc.loadPackageDefinition(packageDefinition).auth;
 
-// Simulated Database
-const users = [];
-
 // MQTT Client Setup
 const mqttClient = mqtt.connect(MQTT_BROKER_URL);
 mqttClient.on('connect', () => console.log('Connected to MQTT broker'));
 
 // Register User
-function RegisterUser(call, callback) {
+async function RegisterUser(call, callback) {
   const { name, email, password } = call.request;
-  if (users.find((user) => user.email === email)) {
-    callback(null, { error: 'User already exists.' });
-    return;
+
+  try {
+    const existingUser = await r.table('Users').filter({ email }).run(dbConnection);
+    if ((await existingUser.toArray()).length > 0) {
+      callback(null, { error: 'User already exists.' });
+      return;
+    }
+
+    const hashedPassword = bcrypt.hashSync(password, 10);
+    const result = await r.table('Users').insert({ name, email, password: hashedPassword }).run(dbConnection);
+
+    if (result.inserted === 1) {
+      callback(null, { id: result.generated_keys[0], message: 'User registered successfully.' });
+    } else {
+      callback(null, { error: 'Failed to register user.' });
+    }
+  } catch (error) {
+    console.error('Error registering user:', error);
+    callback(null, { error: 'Internal server error.' });
   }
-
-  const hashedPassword = bcrypt.hashSync(password, 10);
-  const id = `user-${users.length + 1}`;
-  users.push({ id, name, email, password: hashedPassword });
-
-  callback(null, { id, message: 'User registered successfully.' });
 }
 
 // Login User
-function Login(call, callback) {
+async function Login(call, callback) {
   const { email, password } = call.request;
-  const user = users.find((user) => user.email === email);
 
-  if (!user || !bcrypt.compareSync(password, user.password)) {
-    callback(null, { error: 'Invalid email or password.' });
-    return;
+  try {
+    const userCursor = await r.table('Users').filter({ email }).run(dbConnection);
+    const users = await userCursor.toArray();
+
+    if (users.length === 0 || !bcrypt.compareSync(password, users[0].password)) {
+      callback(null, { error: 'Invalid email or password.' });
+      return;
+    }
+
+    const token = jwt.sign({ id: users[0].id, email: users[0].email }, JWT_SECRET, { expiresIn: '1h' });
+    callback(null, { token });
+  } catch (error) {
+    console.error('Error logging in user:', error);
+    callback(null, { error: 'Internal server error.' });
   }
-
-  const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, { expiresIn: '1h' });
-  callback(null, { token });
 }
 
 // Verify Token
-function VerifyToken(call, callback) {
+async function VerifyToken(call, callback) {
   const { token } = call.request;
 
-  jwt.verify(token, JWT_SECRET, (err, decoded) => {
+  jwt.verify(token, JWT_SECRET, async (err, decoded) => {
     if (err) {
       callback(null, { success: false, error: err.name === 'TokenExpiredError' ? 'Token expired.' : 'Invalid token.' });
-    } else {
-      const user = users.find((u) => u.id === decoded.id);
-      if (user) {
-        callback(null, { success: true, user: { id: user.id, email: user.email } });
-      } else {
+      return;
+    }
+
+    try {
+      const userCursor = await r.table('Users').get(decoded.id).run(dbConnection);
+      if (!userCursor) {
         callback(null, { success: false, error: 'User not found.' });
+      } else {
+        callback(null, { success: true, user: { id: userCursor.id, email: userCursor.email } });
       }
+    } catch (error) {
+      console.error('Error verifying token:', error);
+      callback(null, { success: false, error: 'Internal server error.' });
     }
   });
 }
@@ -130,7 +166,9 @@ async function GetRoute(call, callback) {
 }
 
 // Start gRPC Server
-function main() {
+async function main() {
+  await connectToDB();
+
   const server = new grpc.Server();
   server.addService(authProto.AuthService.service, {
     RegisterUser,

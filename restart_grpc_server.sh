@@ -1,3 +1,5 @@
+#!/bin/bash
+
 # Port number to search for
 PORT=50051
 
@@ -12,10 +14,18 @@ else
   echo "No process found using port $PORT."
 fi
 
-# Restart the script using node
+# Navigate to the directory containing the script
+SCRIPT_DIR="/home/harrington4/Design_Project2020/programming/expo/vehicle-tracking-systems/backend"
+cd $SCRIPT_DIR || { echo "Failed to navigate to $SCRIPT_DIR. Exiting."; exit 1; }
+
+# Restart the script using Node.js
 SCRIPT_NAME="authServer.js" # Replace with the name of your script if different
 
-echo "Starting $SCRIPT_NAME with Node.js"
-node $SCRIPT_NAME
+if [ -f "$SCRIPT_NAME" ]; then
+  echo "Starting $SCRIPT_NAME with Node.js"
+  node $SCRIPT_NAME
+else
+  echo "Script $SCRIPT_NAME not found in $SCRIPT_DIR. Exiting."
+fi
 
 # End of script
