@@ -1,0 +1,8 @@
+main: {
+  flex: 1,
+  height: "100%", // Ensure full height for the map
+  padding: "20px",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+}

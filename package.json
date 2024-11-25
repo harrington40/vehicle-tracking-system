@@ -3,8 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-
-     "dev": "next dev -p 3024",
+    "dev": "next dev -p 3024",
     "build": "next build",
     "generate-env": "node generate-env.js",
     "start": "next start",
@@ -20,6 +19,7 @@
     "grpc": "^1.24.11",
     "jsonwebtoken": "^9.0.2",
     "leaflet": "^1.9.4",
+    "leaflet-routing-machine": "^3.2.12",
     "next": "15.0.3",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",

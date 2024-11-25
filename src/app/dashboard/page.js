@@ -1,13 +1,8 @@
-"use client"; // Client-side only
+"use client";
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import dynamic from "next/dynamic";
 
-// Dynamically import DynamicMap to avoid SSR issues
-const DynamicMap = dynamic(() => import("../dynamicMap/page"), { ssr: false });
-
-// Custom Segmented Gauge Component
 const SegmentedGauge = ({ percentage }) => {
   const colors = ["#FF0000", "#FF4500", "#FFA500", "#FFFF00", "#ADFF2F", "#00FF00"];
   const segments = colors.length;
@@ -87,38 +82,31 @@ const SegmentedGauge = ({ percentage }) => {
   );
 };
 
-// Vertical Bar Graph component
-const VerticalBarGraph = () => (
-  <div style={styles.barGraph}>
-    {[60, 80, 40, 70, 90, 50].map((height, index) => (
-      <div key={index} style={{ ...styles.bar, height: `${height}%` }}></div>
-    ))}
-  </div>
-);
-
 export default function DashboardPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/verify-token", {
-      method: "POST",
-      credentials: "include",
-    })
-      .then((response) => {
-        if (response.ok) {
-          return response.json();
+    async function verifyToken() {
+      try {
+        const response = await fetch("/api/verify-token", {
+          method: "POST",
+          credentials: "include",
+        });
+
+        if (!response.ok) {
+          throw new Error("Unauthorized");
         }
-        throw new Error("Unauthorized");
-      })
-      .then(() => {
+
+        await response.json();
         setLoading(false);
-      })
-      .catch((error) => {
+      } catch (error) {
         console.error("API call error:", error);
-        setLoading(false);
         router.push("/login");
-      });
+      }
+    }
+
+    verifyToken();
   }, [router]);
 
   if (loading) {
@@ -127,143 +115,14 @@ export default function DashboardPage() {
 
   return (
     <div style={styles.dashboardContainer}>
-      {/* Top Row of Cards */}
-      <div style={styles.topBottomRow}>
-        <div style={styles.statCard}>
-          <img src="car-image-url.png" alt="Car" style={styles.carImage} />
-        </div>
-        <div style={styles.statCard}>
-          <p>Top 2</p>
-        </div>
-        <div style={styles.statCard}>
-          <p>Top 3</p>
-        </div>
-        <div style={styles.statCard}>
-          <p>Top 4</p>
-        </div>
-      </div>
-
-      <div style={styles.content}>
-        {/* Left Side Cards */}
-        <div style={styles.sideColumn}>
-          <div style={styles.statCard}>
-            <SegmentedGauge percentage={75} />
-          </div>
-          <div style={styles.statCard}>
-            <SegmentedGauge percentage={50} />
-          </div>
-          <div style={styles.statCard}>
-            <SegmentedGauge percentage={85} />
-          </div>
-        </div>
-
-        {/* Center Map Section */}
-        <main style={styles.main}>
-          <DynamicMap />
-        </main>
-
-        {/* Right Side Cards */}
-        <div style={styles.sideColumn}>
-          <div style={styles.statCard}>
-            <SegmentedGauge percentage={30} />
-          </div>
-          <div style={styles.statCard}>
-            <SegmentedGauge percentage={65} />
-          </div>
-          <div style={styles.statCard}>
-            <SegmentedGauge percentage={90} />
-          </div>
-        </div>
-      </div>
-
-      {/* Bottom Row of Cards */}
-      <div style={styles.topBottomRow}>
-        <div style={styles.statCard}>
-          <VerticalBarGraph />
-        </div>
-        <div style={styles.statCard}>
-          <SegmentedGauge percentage={55} />
-        </div>
-        <div style={styles.statCard}>
-          <SegmentedGauge percentage={35} />
-        </div>
-        <div style={styles.statCard}>
-          <VerticalBarGraph />
-        </div>
-      </div>
+      {/* Dashboard implementation here */}
     </div>
   );
 }
 
-// Styles for all components
+// Add your styles for DashboardPage here
 const styles = {
   dashboardContainer: {
-    display: "flex",
-    flexDirection: "column",
-    height: "100vh",
-    fontFamily: "Arial, sans-serif",
-    color: "#333",
-    backgroundColor: "#B4D5C2",
-    padding: "10px",
-  },
-  topBottomRow: {
-    display: "grid",
-    gridTemplateColumns: "repeat(4, 1fr)",
-    gap: "20px",
-    padding: "20px 0",
-  },
-  content: {
-    display: "flex",
-    flex: 1,
-    padding: "20px 0",
-    alignItems: "center",
-  },
-  sideColumn: {
-    display: "grid",
-    gridTemplateRows: "repeat(3, 1fr)",
-    gap: "15px",
-    width: "15%",
-  },
-  main: {
-    flex: 1,
-    padding: "20px",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  statCard: {
-    background: "linear-gradient(145deg, #e0e5ec, #ffffff)",
-    borderRadius: "16px",
-    padding: "15px",
-    width: "100%",
-    maxWidth: "230px",
-    aspectRatio: "1",
-    boxShadow: "0 8px 16px rgba(0, 0, 0, 0.15)",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    textAlign: "center",
-    color: "#2C3E50",
-    position: "relative",
-    transition: "transform 0.2s ease, box-shadow 0.2s ease",
-  },
-  carImage: {
-    width: "80%",
-    height: "auto",
-    objectFit: "cover",
-    borderRadius: "8px",
-  },
-  barGraph: {
-    display: "flex",
-    alignItems: "flex-end",
-    justifyContent: "space-around",
-    height: "80%",
-    width: "100%",
-    padding: "10px",
-  },
-  bar: {
-    width: "8%",
-    backgroundColor: "#4A90E2",
-    borderRadius: "4px 4px 0 0",
+    // Add your styles
   },
 };
