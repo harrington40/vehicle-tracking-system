@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
 
-     "dev": "next dev -p 3021",
+     "dev": "next dev -p 3024",
     "build": "next build",
     "generate-env": "node generate-env.js",
     "start": "next start",
