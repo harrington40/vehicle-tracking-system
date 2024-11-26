@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package routing;
+
+// The service definition
+service RoutingService {
+  // RPC method to get the route
+  rpc GetRoute (RouteRequest) returns (RouteResponse);
+}
+
+// The message for route request
+message RouteRequest {
+  string start = 1; // Start coordinates in "latitude,longitude" format
+  string end = 2;   // End coordinates in "latitude,longitude" format
+}
+
+// The message for route response
+message RouteResponse {
+  string status = 1;                   // e.g., "success" or "error"
+  string error_message = 2;            // If there's an error
+  repeated RouteStep route_steps = 3;  // The route steps
+  double distance = 4;                 // Total distance in meters
+  double duration = 5;                 // Total duration in seconds
+}
+
+// A single step in the route
+message RouteStep {
+  string instruction = 1; // Turn instructions, e.g., "Turn left"
+  double distance = 2;    // Distance for this step in meters
+  double duration = 3;    // Duration for this step in seconds
+  string geometry = 4;    // Geometry of this step (e.g., encoded polyline)
+}

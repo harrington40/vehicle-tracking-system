@@ -1,0 +1,5 @@
+const GRPC_SERVER_URL = 'your-grpc-server:50051';
+
+module.exports = {
+  GRPC_SERVER_URL,
+};
