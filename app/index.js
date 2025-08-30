@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, StyleSheet, Pressable, ScrollView, useWindowDimensions } from "react-native";
+import { View, Text, StyleSheet, Pressable, ScrollView, useWindowDimensions, Image } from "react-native";
 import { COLORS, SPACING } from "../lib/theme";
 import Container from "../components/layout/Container";
 import Card from "../components/ui/Card";
@@ -29,10 +29,30 @@ export default function Dashboard() {
   return (
     <ScrollView style={{ flex: 1, backgroundColor: '#f5f7fa' }}>
       <Container maxWidth={MAX} style={{ paddingHorizontal: containerPadding, paddingVertical: 20 }}>
-        {/* Page header with breadcrumb navigation */}
-        <Text style={styles.breadcrumb}>
-          Dashboard · <Text style={{ color: COLORS.subtext }}>eCommerce</Text>
-        </Text>
+        {/* Page header with breadcrumb navigation and avatar */}
+        <View style={styles.pageHeader}>
+          <View style={styles.headerLeft}>
+            <Text style={styles.breadcrumb}>Dashboard</Text>
+            <Text style={styles.headerSubtitle}>· eCommerce</Text>
+          </View>
+          
+          <View style={styles.headerRight}>
+            <Link href="/settings" asChild>
+              <Pressable style={({ pressed }) => [styles.settingsBtn, pressed && { opacity: 0.9 }]}>
+                <Text style={{ color: "white", fontWeight: "700", marginRight: 4 }}>Settings</Text>
+                <Ionicons name="chevron-down" size={16} color="white" />
+              </Pressable>
+            </Link>
+            
+            {/* Avatar */}
+            <Pressable style={styles.avatar}>
+              <Image 
+                source={{ uri: 'https://randomuser.me/api/portraits/men/32.jpg' }}
+                style={styles.avatarImage}
+              />
+            </Pressable>
+          </View>
+        </View>
 
         {/* Uniform Card Grid */}
         <CardGrid spacing={cardSpacing} columns={2}>
@@ -61,37 +81,30 @@ export default function Dashboard() {
             </View>
           </DashboardCard>
 
-          {/* CARD #2: Key Metrics Summary */}
-          <DashboardCard noHeader>
-            <View style={styles.kpiContainer}>
-              <KPICircle 
-                icon="cart-outline" 
-                value="85,246" 
-                label="Orders" 
-                color="#6366f1" 
-                bgColor="#e0e7ff"
-              />
-              <KPICircle 
-                icon="cash-outline" 
-                value="$96,147" 
-                label="Income" 
-                color="#10b981" 
-                bgColor="#d1fae5"
-              />
-              <KPICircle 
-                icon="notifications-outline" 
-                value="846" 
-                label="Notifications" 
-                color="#f43f5e" 
-                bgColor="#ffe4e6"
-              />
-              <KPICircle 
-                icon="wallet-outline" 
-                value="$84,472" 
-                label="Payment" 
-                color="#0ea5e9" 
-                bgColor="#e0f2fe"
-              />
+          {/* CARD #2: Key Metrics Summary with Vertical Dividers */}
+          <DashboardCard noHeader style={{ padding: 0 }}>
+            <View style={styles.metricsContainer}>
+              {[
+                { icon: "cart-outline", value: "85,246", label: "Orders", color: "#6366f1", bgColor: "#e0e7ff" },
+                { icon: "print-outline", value: "$96,147", label: "Income", color: "#10b981", bgColor: "#d1fae5" },
+                { icon: "notifications-outline", value: "846", label: "Notifications", color: "#f43f5e", bgColor: "#ffe4e6" },
+                { icon: "card-outline", value: "$84,472", label: "Payment", color: "#0ea5e9", bgColor: "#e0f2fe" }
+              ].map((metric, index, array) => (
+                <View key={index} style={styles.metricColumn}>
+                  <View style={styles.metricContent}>
+                    <View style={[styles.iconCircle, { backgroundColor: metric.bgColor }]}>
+                      <Ionicons name={metric.icon} size={24} color={metric.color} />
+                    </View>
+                    <Text style={styles.kpi}>{metric.value}</Text>
+                    <Text style={styles.kpiLabel}>{metric.label}</Text>
+                  </View>
+                  
+                  {/* Add divider after each metric except the last one */}
+                  {index < array.length - 1 && (
+                    <View style={styles.metricDivider} />
+                  )}
+                </View>
+              ))}
             </View>
           </DashboardCard>
 
@@ -125,23 +138,63 @@ export default function Dashboard() {
           </DashboardCard>
 
           {/* CARD #5: Sales & Views Chart */}
-          <DashboardCard title="Sales & Views" showOptions>
-            <BarMini 
-              data={[12, 22, 60, 45, 10, 20, 28, 18, 32, 26, 14, 24]} 
-              secondaryData={[8, 15, 40, 30, 8, 14, 22, 16, 25, 18, 10, 20]}
-              labels={["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep"]}
-              height={140}
-              style={{ marginVertical: 20 }}
-            />
-            
-            <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <Legend swatch="#3b82f6">Sales</Legend>
-              <Legend swatch="#8b5cf6">Views</Legend>
-            </View>
-          </DashboardCard>
+ // Update Card #5 (Sales & Views Chart)
+
+{/* CARD #5: Sales & Views Chart with Performance Metrics */}
+<DashboardCard title="Sales & Views" showOptions columnSpan={2} style={{ minHeight: 42-0 }}>
+  <BarMini 
+    data={[12, 22, 60, 45, 10, 20, 28, 18, 32, 26, 14, 24]} 
+    secondaryData={[8, 15, 40, 30, 8, 14, 22, 16, 25, 18, 10, 20]}
+    labels={["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep"]}
+    height={220}
+    style={{ marginVertical: 20 }}
+    barColors={["#3b82f6", "#8b5cf6"]} // Blue and Purple
+  />
+  
+  <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 20 }}>
+    <Legend swatch="#3b82f6">Sales</Legend>
+    <Legend swatch="#8b5cf6">Views</Legend>
+  </View>
+
+  {/* Horizontal divider */}
+  <View style={{ height: 1, backgroundColor: '#e2e8f0', marginBottom: 20 }} />
+  
+  {/* Three ring progress circles with vertical dividers */}
+  <View style={{ flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center' }}>
+    {/* First ring progress */}
+    <View style={{ alignItems: 'center', flex: 1 }}>
+      <Text style={{ fontSize: 14, fontWeight: '600', marginBottom: 8 }}>Conversion</Text>
+      <RingProgress value={68} size={80} stroke={8} color="#3b82f6" label="68%" />
+      <Text style={{ fontSize: 18, fontWeight: '700', marginTop: 8 }}>35,462</Text>
+    </View>
+    
+    {/* First vertical divider */}
+    <View style={{ width: 1, height: 120, backgroundColor: '#e2e8f0' }} />
+    
+    {/* Second ring progress */}
+    <View style={{ alignItems: 'center', flex: 1 }}>
+      <Text style={{ fontSize: 14, fontWeight: '600', marginBottom: 8 }}>Engagement</Text>
+      <RingProgress value={52} size={80} stroke={8} color="#8b5cf6" label="52%" />
+      <Text style={{ fontSize: 18, fontWeight: '700', marginTop: 8 }}>23,594</Text>
+    </View>
+    
+    {/* Second vertical divider */}
+    <View style={{ width: 1, height: 120, backgroundColor: '#e2e8f0' }} />
+    
+    {/* Third ring progress */}
+    <View style={{ alignItems: 'center', flex: 1 }}>
+      <Text style={{ fontSize: 14, fontWeight: '600', marginBottom: 8 }}>Retention</Text>
+      <RingProgress value={89} size={80} stroke={8} color="#10b981" label="89%" />
+      <Text style={{ fontSize: 18, fontWeight: '700', marginTop: 8 }}>12,047</Text>
+    </View>
+  </View>
+</DashboardCard>
 
           {/* CARD #6: Sales This Year */}
-          <DashboardCard title="Sales This Year">
+          <DashboardCard title="Sales This Year" style={{ 
+           minHeight: 200,
+           maxWidth: 600
+           }}>
             <View style={styles.rowStart}>
               <Text style={styles.kpiLarge}>$65,129</Text>
               <Chip text="↑ 8.6%" tone="success" style={{ marginLeft: 8, alignSelf: 'center' }} />
@@ -196,10 +249,11 @@ export default function Dashboard() {
  * CardGrid Component
  * ------------------
  * Creates a grid of equally sized and spaced cards
- * 
- * @param {ReactNode} children - Card components to display in grid
- * @param {number} spacing - Space between cards in pixels
- * @param {number} columns - Number of columns in desktop view
+ */
+/**
+ * CardGrid Component
+ * ------------------
+ * Creates a grid of equally sized and spaced cards
  */
 function CardGrid({ children, spacing = 16, columns = 2 }) {
   return (
@@ -209,17 +263,28 @@ function CardGrid({ children, spacing = 16, columns = 2 }) {
       marginLeft: -spacing/2,
       marginRight: -spacing/2,
     }}>
-      {React.Children.map(children, (child, index) => (
-        <View style={[
-          styles.gridItem, 
-          { 
-            padding: spacing/2, 
-            width: `${100/columns}%` 
-          }
-        ]}>
-          {child}
-        </View>
-      ))}
+      {React.Children.map(children, (child, index) => {
+        // Check if child is valid and has props before accessing columnSpan
+        const columnSpan = child && child.props && child.props.columnSpan ? child.props.columnSpan : 1;
+        
+        return (
+          <View style={[
+            styles.gridItem, 
+            { 
+              padding: spacing/2, 
+              width: `${(100/columns) * columnSpan}%` 
+            }
+          ]}>
+            {child && React.isValidElement(child) ? 
+              React.cloneElement(child, {
+                style: {
+                  ...(child.props.style || {}),
+                  height: child.props.expandHeight ? '100%' : undefined,
+                }
+              }) : child}
+          </View>
+        );
+      })}
     </View>
   );
 }
@@ -228,17 +293,22 @@ function CardGrid({ children, spacing = 16, columns = 2 }) {
  * DashboardCard Component
  * ------------------
  * Wrapper for Card component with consistent styling and optional header
- * 
- * @param {ReactNode} children - Card content
- * @param {string} title - Card title (optional)
- * @param {boolean} showOptions - Whether to show options menu (three dots)
- * @param {boolean} noHeader - Whether to hide header completely
- * @param {Object} style - Additional card styles
  */
-function DashboardCard({ children, title, showOptions = false, noHeader = false, style }) {
+/**
+ * DashboardCard Component
+ * ------------------
+ * Wrapper for Card component with consistent styling and optional header
+ */
+function DashboardCard({ children, title, showOptions = false, noHeader = false, style = {} }) {
+  // Set a default empty object for style
+  
   return (
     <Card style={[{ height: '100%', minHeight: 220 }, style]}>
-      <View style={{ padding: 20, flex: 1 }}>
+      <View style={[
+        { padding: 20, flex: 1 },
+        // Safely check if style exists and has a padding property
+        style && typeof style === 'object' && style.padding !== undefined ? { padding: style.padding } : null
+      ]}>
         {!noHeader && (
           <View style={[styles.rowBetween, { marginBottom: 12 }]}>
             {title && <Text style={styles.cardTitle}>{title}</Text>}
@@ -250,7 +320,6 @@ function DashboardCard({ children, title, showOptions = false, noHeader = false,
     </Card>
   );
 }
-
 /**
  * KPICircle Component
  * ------------------
@@ -318,11 +387,76 @@ function NavButton({ href, label }) {
  * Centralized styles for consistent UI
  */
 const styles = StyleSheet.create({
+  // Header styles
+  pageHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: SPACING.lg,
+  },
+  headerLeft: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+  },
+  headerSubtitle: {
+    color: COLORS.subtext, 
+    fontSize: 14, 
+    marginLeft: 4, 
+    alignSelf: 'flex-end'
+  },
+  headerRight: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  avatar: {
+    marginLeft: 16,
+  },
+  avatarImage: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#f1f5f9', // Fallback
+  },
+  
+
+  // Styles for ring progress metrics
+  horizontalDivider: {
+    height: 1,
+    width: '100%',
+    backgroundColor: '#e2e8f0',
+    marginBottom: 20,
+  },
+  metricsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+  },
+  metricColumn: {
+    alignItems: 'center', 
+    flex: 1,
+  },
+  metricLabel: {
+    fontSize: 14, 
+    fontWeight: '600', 
+    marginBottom: 8,
+  },
+  metricValue: {
+    fontSize: 18, 
+    fontWeight: '700', 
+    marginTop: 8,
+  },
+  verticalDivider: {
+    width: 1, 
+    height: 120, 
+    backgroundColor: '#e2e8f0',
+  },
+
+
+  // General styles
   breadcrumb: {
     fontSize: 18,
     color: COLORS.text,
     fontWeight: '600',
-    marginBottom: SPACING.lg,
   },
   gridItem: {
     marginBottom: 16,
@@ -346,6 +480,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
   },
+  
+  // Text styles
   kpiLarge: {
     fontSize: 32,
     fontWeight: "700",
@@ -369,6 +505,8 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: COLORS.subtext,
   },
+  
+  // Button styles
   settingsBtn: {
     flexDirection: "row",
     alignItems: "center",
@@ -377,6 +515,32 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 6,
   },
+  
+  // KPI Metric container with dividers
+  metricsContainer: {
+    flexDirection: "row",
+    padding: 20,
+    flex: 1,
+    position: 'relative',
+  },
+  metricColumn: {
+    flex: 1,
+    position: 'relative',
+  },
+  metricContent: {
+    alignItems: "center",
+    padding: 10,
+  },
+  metricDivider: {
+    position: 'absolute',
+    top: '15%',
+    right: 0,
+    width: 1,
+    height: '70%',
+    backgroundColor: '#e2e8f0',
+  },
+  
+  // Legacy KPI styles for backward compatibility
   kpiContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
