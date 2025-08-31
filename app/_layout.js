@@ -1,6 +1,7 @@
 import React from "react";
 import { Stack } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { StatusBar } from "expo-status-bar";
 import { NativeBaseProvider, Box } from "native-base";
 import { nbTheme } from "../lib/nb-theme";
 import { COLORS } from "../lib/theme";
@@ -12,6 +13,8 @@ export default function RootLayout() {
   return (
     <LayoutProvider>
       <NativeBaseProvider theme={nbTheme}>
+        <StatusBar style="dark" backgroundColor={COLORS.background} />
+        
         <SafeAreaView style={{ flex: 1, backgroundColor: COLORS.bg }}>
           <Box flex={1} flexDirection="row" bg="bg.50">
             <Box w="240px" bg="white" borderRightWidth={1} borderRightColor="border.200">

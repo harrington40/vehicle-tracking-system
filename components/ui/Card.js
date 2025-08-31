@@ -1,20 +1,36 @@
 // components/ui/Card.js
-import React from "react";
-import { Box } from "native-base";
+import React from 'react';
+import { View, StyleSheet } from 'react-native';
+import { COLORS, RADIUS, SHADOWS } from '../../lib/theme';
 
-export default function Card({ children, style, ...props }) {
+export default function Card({ children, style, elevation = 'medium', radius = 'md' }) {
   return (
-    <Box
-      bg="white"
-      rounded="x2"
-      shadow={4}
-      borderWidth={1}
-      borderColor="border.00"
-      p={4}
-      style={style}
-      {...props}   // let you pass flex props, etc.
+    <View 
+      style={[
+        styles.card, 
+        styles[`${elevation}Elevation`],
+        { borderRadius: RADIUS[radius] },
+        style
+      ]}
     >
       {children}
-    </Box>
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  card: {
+    backgroundColor: COLORS.cardBackground,
+    overflow: 'hidden',
+    borderRadius: RADIUS.md,
+  },
+  smallElevation: {
+    ...SHADOWS.small,
+  },
+  mediumElevation: {
+    ...SHADOWS.medium,
+  },
+  largeElevation: {
+    ...SHADOWS.large,
+  },
+});

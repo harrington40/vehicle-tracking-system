@@ -23,7 +23,13 @@
       "edgeToEdgeEnabled": true
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro",
+      "build": {
+
+      },
+      "output": "static",
+      "transpileModules": ["react-native-maps"]
     },
     "plugins": [
       "expo-router"
