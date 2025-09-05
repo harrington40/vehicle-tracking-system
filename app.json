@@ -25,14 +25,17 @@
     "web": {
       "favicon": "./assets/favicon.png",
       "bundler": "metro",
-      "build": {
-
-      },
+      "build": {},
       "output": "static",
-      "transpileModules": ["react-native-maps"]
+      "transpileModules": [
+        "react-native-maps"
+      ]
     },
     "plugins": [
-      "expo-router"
+      "expo-router",
+      "expo-font",
+      "expo-asset",
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": false

@@ -37,6 +37,7 @@ const NAV_SECTIONS = [
     items: [
       { href: "/alerts", label: "Alerts", icon: "notifications-outline", badge: "3" },
       { href: "/settings", label: "Settings", icon: "settings-outline" },
+      { href: "/user-management", label: "User Management", icon: "person-outline" }, // Add this
       { href: "/users", label: "User Management", icon: "person-outline" },
       { href: "/billing", label: "Billing", icon: "card-outline" },
     ]
