@@ -8,11 +8,13 @@ import BarMini from "../components/charts/BarMini";
 import Chip from "../components/ui/Chip";
 import ProgressBar from "../components/ui/ProgressBar";
 import RingProgress from "../components/ui/RingProgress";
-import OSMMap from '../components/maps/MapView';
+// Replace the web-specific import with cross-platform MapView
+import MapView from '../components/maps/MapView'; // ← Updated import
 import Button from '../components/ui/Button';
 import Header from '../components/layout/Header';
 import { Link, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import NestedTableRN from '../components/nested-table/NestedTableRN';
 import { LinearGradient } from 'expo-linear-gradient';
 
 /**
@@ -30,7 +32,83 @@ export default function Dashboard() {
   const cardSpacing = 16; // Space between cards
   const containerPadding = 16; // Padding on container sides
   const availableWidth = Math.min(width - (containerPadding * 2), MAX);
+
+  // Demo vehicle data for the map
+  const liveVehicleData = [
+    { id: 1, name: "Truck 101", latitude: 37.78825, longitude: -122.4324, status: "moving", speed: 65 },
+    { id: 2, name: "Van 202", latitude: 37.78525, longitude: -122.4354, status: "stopped", speed: 0 },
+    { id: 3, name: "Car 303", latitude: 37.78925, longitude: -122.4224, status: "idle", speed: 5 },
+    { id: 4, name: "Delivery 404", latitude: 37.79025, longitude: -122.4124, status: "moving", speed: 45 },
+  ];
   
+
+// Demo vehicle tracking data for the NestedTableRN
+  const vehicleTrackingData = [
+    {
+      id: 1,
+      vehicle: "Truck 101",
+      driver: "John Smith",
+      status: "Moving",
+      location: "Highway 101, CA",
+      lastUpdate: "2 min ago",
+      events: [
+        { timestamp: "14:30", event: "Started Route", location: "Warehouse A", details: "Loaded 15 packages" },
+        { timestamp: "14:45", event: "Speed Alert", location: "Highway 101", details: "Exceeded 75 mph" },
+        { timestamp: "15:00", event: "Rest Stop", location: "Rest Area B", details: "15 min break" },
+      ]
+    },
+    {
+      id: 2,
+      vehicle: "Van 202",
+      driver: "Sarah Johnson",
+      status: "Stopped",
+      location: "Downtown SF",
+      lastUpdate: "5 min ago",
+      events: [
+        { timestamp: "13:15", event: "Delivery", location: "123 Main St", details: "Package delivered" },
+        { timestamp: "13:45", event: "Stopped", location: "Downtown SF", details: "Engine off" },
+      ]
+    },
+    {
+      id: 3,
+      vehicle: "Car 303",
+      driver: "Mike Davis",
+      status: "Idle",
+      location: "Office Parking",
+      lastUpdate: "1 min ago",
+      events: [
+        { timestamp: "12:00", event: "Arrived", location: "Office Parking", details: "End of route" },
+        { timestamp: "12:30", event: "Maintenance", location: "Office Parking", details: "Scheduled check" },
+      ]
+    },
+    {
+      id: 4,
+      vehicle: "Delivery 404",
+      driver: "Alex Wilson",
+      status: "Moving",
+      location: "Interstate 280",
+      lastUpdate: "3 min ago",
+      events: [
+        { timestamp: "11:45", event: "Started Route", location: "Distribution Center", details: "Loaded 22 packages" },
+        { timestamp: "12:15", event: "Delivery", location: "456 Oak Ave", details: "Package delivered" },
+        { timestamp: "12:45", event: "Route Change", location: "Interstate 280", details: "Traffic reroute" },
+      ]
+    },
+    {
+      id: 5,
+      vehicle: "Truck 205",
+      driver: "Maria Garcia",
+      status: "Loading",
+      location: "Warehouse B",
+      lastUpdate: "8 min ago",
+      events: [
+        { timestamp: "10:30", event: "Arrived", location: "Warehouse B", details: "Ready for loading" },
+        { timestamp: "10:45", event: "Loading", location: "Warehouse B", details: "Loading in progress" },
+      ]
+    },
+  ];
+
+
   return (
     <ScrollView style={{ flex: 1, backgroundColor: '#f5f7fa' }}>
       <Container maxWidth={MAX} style={{ paddingHorizontal: containerPadding, paddingVertical: 20 }}>
@@ -39,7 +117,7 @@ export default function Dashboard() {
         <View style={styles.pageHeader}>
           <View style={styles.headerLeft}>
             <Text style={styles.breadcrumb}>Dashboard</Text>
-            <Text style={styles.headerSubtitle}>·eCommerce</Text>
+            <Text style={styles.headerSubtitle}>·Vehicle Tracking</Text>
           </View>
           
           <View style={styles.headerRight}>
@@ -68,61 +146,28 @@ export default function Dashboard() {
           </View>
         </View>
 
-        {/* FIRST ROW: Vehicle Map Card with OSM integration */}
+        {/* FIRST ROW: Vehicle Map Card with Cross-Platform MapView */}
         <CardGrid spacing={cardSpacing} columns={1}>
           <DashboardCard 
-            title="Vehicle Map" 
+            title="Vehicle Tracking Map" 
             showOptions 
-            style={{ 
-              minHeight: 320,
-              maxHeight: 420,
-              marginBottom: 16
-            }}
+            style={styles.topMapCard}
+            padding={0} // Remove padding to let MapView handle its own spacing
           >
-            {/* Compact notification banner with green theme */}
-            <View style={styles.compactNotificationBanner}>
-              <View style={styles.compactNotificationIcon}>
-                <Ionicons name="notifications" size={18} color="#fff" />
-                <View style={styles.notificationDot}>
-                  <Text style={styles.notificationDotText}>3</Text>
-                </View>
-              </View>
-              <View style={styles.notificationContent}>
-                <Text style={styles.compactNotificationTitle}>Stateful & Stateless Notification</Text>
-                <View style={styles.notificationBar} />
-              </View>
-            </View>
-            
-            {/* OpenStreetMap Integration */}
-            <View style={styles.mapWrapper}>
-              {typeof OSMMap !== 'undefined' ? (
-                <OSMMap 
-                  style={{flex: 1, height: 260, borderRadius: 8}}
-                  vehicles={[
-                    { id: 1, name: "Truck 101", latitude: 37.78825, longitude: -122.4324, status: "moving", speed: 65 },
-                    { id: 2, name: "Van 202", latitude: 37.78525, longitude: -122.4354, status: "stopped", speed: 0 },
-                    { id: 3, name: "Car 303", latitude: 37.78925, longitude: -122.4224, status: "idle", speed: 5 },
-                  ]}
-                />
-              ) : (
-                <View style={styles.mapContainer}>
-                  <Ionicons name="map-outline" size={48} color={COLORS.primary} />
-                  <Text style={styles.mapPlaceholderText}>Vehicle Map</Text>
-                </View>
-              )}
-            </View>
-            
-            {/* View full map button */}
-            <View style={styles.viewMapButtonContainer}>
-              <Button
-                title="View Full Map"
-                iconRight="arrow-forward"
-                variant="filled"
-                size="small"
-                onPress={() => router.push('/tracking')}
-                style={{backgroundColor: COLORS.primary, alignSelf: 'flex-end', marginTop: 10}}
-              />
-            </View>
+            {/* Cross-Platform MapView with OSRM Integration */}
+            <MapView 
+              osrmServerUrl="https://api.transtechologies.com"
+              vehicles={liveVehicleData}
+              style={styles.mapViewStyle}
+              initialRegion={{
+                latitude: 37.78825,
+                longitude: -122.4324,
+                latitudeDelta: 0.0922,
+                longitudeDelta: 0.0421,
+                zoom: 13
+              }}
+              showControls={true}
+            />
           </DashboardCard>
         </CardGrid>
 
@@ -161,10 +206,10 @@ export default function Dashboard() {
           <DashboardCard noHeader style={{ padding: 0 }}>
             <View style={styles.metricsContainer}>
               {[
-                { icon: "cart-outline", value: "85,246", label: "Orders", color: COLORS.primary, bgColor: COLORS.primaryLight || "#e0e7ff" },
-                { icon: "print-outline", value: "$96,147", label: "Income", color: COLORS.success || "#10b981", bgColor: "#d1fae5" },
-                { icon: "notifications-outline", value: "846", label: "Notifications", color: COLORS.danger || "#f43f5e", bgColor: "#ffe4e6" },
-                { icon: "card-outline", value: "$84,472", label: "Payment", color: COLORS.info || "#0ea5e9", bgColor: "#e0f2fe" }
+                { icon: "car-outline", value: "12", label: "Active Vehicles", color: COLORS.primary, bgColor: COLORS.primaryLight || "#e0e7ff" },
+                { icon: "location-outline", value: "3,247", label: "Total Miles", color: COLORS.success || "#10b981", bgColor: "#d1fae5" },
+                { icon: "notifications-outline", value: "5", label: "Alerts", color: COLORS.danger || "#f43f5e", bgColor: "#ffe4e6" },
+                { icon: "time-outline", value: "98.2%", label: "Uptime", color: COLORS.info || "#0ea5e9", bgColor: "#e0f2fe" }
               ].map((metric, index, array) => (
                 <View key={index} style={styles.metricColumn}>
                   <View style={styles.metricContent}>
@@ -185,18 +230,18 @@ export default function Dashboard() {
           </DashboardCard>
 
           {/* CARD #3: Total Users Card */}
-          <DashboardCard title="Total Users" showOptions>
+          <DashboardCard title="Fleet Efficiency" showOptions>
             <View style={{ alignItems: 'center', marginTop: 12 }}>
-              <Text style={styles.kpiLarge}>97.4K</Text>
+              <Text style={styles.kpiLarge}>94.7%</Text>
               <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
-                <Text style={[styles.percentChange, { color: COLORS.success }]}>12.5%</Text>
+                <Text style={[styles.percentChange, { color: COLORS.success }]}>+2.1%</Text>
                 <Text style={styles.sub}> from last month</Text>
               </View>
             </View>
             
             <View style={{ marginTop: 16 }}>
               <Sparkline 
-                data={[10, 18, 14, 22, 26, 20, 28]} 
+                data={[88, 91, 87, 94, 96, 92, 94]} 
                 height={70} 
                 stroke={COLORS.primary}
                 fillOpacity={0.1}
@@ -205,19 +250,19 @@ export default function Dashboard() {
           </DashboardCard>
 
           {/* CARD #4: Active Users Card */}
-          <DashboardCard title="Active Users" showOptions>
+          <DashboardCard title="Vehicle Status" showOptions>
             <View style={{ alignItems: 'center', marginTop: 12 }}>
-              <RingProgress value={78} size={100} stroke={10} color={COLORS.primary} label="78%" />
-              <Text style={styles.kpi}>42.5K</Text>
-              <Text style={styles.sub}>24K users increased from last month</Text>
+              <RingProgress value={75} size={100} stroke={10} color={COLORS.primary} label="75%" />
+              <Text style={styles.kpi}>9/12</Text>
+              <Text style={styles.sub}>vehicles currently active</Text>
             </View>
           </DashboardCard>
 
           {/* CARD #5: Sales & Views Chart with Performance Metrics */}
-          <DashboardCard title="Sales & Views" showOptions columnSpan={2} style={{ minHeight: 420 }}>
+          <DashboardCard title="Fleet Performance" showOptions columnSpan={2} style={{ minHeight: 420 }}>
             <BarMini 
-              data={[12, 22, 60, 45, 10, 20, 28, 18, 32, 26, 14, 24]} 
-              secondaryData={[8, 15, 40, 30, 8, 14, 22, 16, 25, 18, 10, 20]}
+              data={[450, 380, 420, 380, 340, 380, 450, 420, 480, 460, 390, 440]} 
+              secondaryData={[320, 280, 310, 290, 260, 290, 340, 310, 360, 340, 290, 330]}
               labels={["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep"]}
               height={220}
               style={{ marginVertical: 20 }}
@@ -225,8 +270,8 @@ export default function Dashboard() {
             />
             
             <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 20 }}>
-              <Legend swatch={COLORS.primary}>Sales</Legend>
-              <Legend swatch="#8b5cf6">Views</Legend>
+              <Legend swatch={COLORS.primary}>Distance (km)</Legend>
+              <Legend swatch="#8b5cf6">Fuel Usage (L)</Legend>
             </View>
 
             {/* Horizontal divider */}
@@ -236,9 +281,9 @@ export default function Dashboard() {
             <View style={{ flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center' }}>
               {/* First ring progress */}
               <View style={{ alignItems: 'center', flex: 1 }}>
-                <Text style={{ fontSize: 14, fontWeight: '600', marginBottom: 8 }}>Conversion</Text>
-                <RingProgress value={68} size={80} stroke={8} color={COLORS.primary} label="68%" />
-                <Text style={{ fontSize: 18, fontWeight: '700', marginTop: 8 }}>35,462</Text>
+                <Text style={{ fontSize: 14, fontWeight: '600', marginBottom: 8 }}>Fuel Efficiency</Text>
+                <RingProgress value={82} size={80} stroke={8} color={COLORS.primary} label="82%" />
+                <Text style={{ fontSize: 18, fontWeight: '700', marginTop: 8 }}>12.4L/100km</Text>
               </View>
               
               {/* First vertical divider */}
@@ -246,9 +291,9 @@ export default function Dashboard() {
               
               {/* Second ring progress */}
               <View style={{ alignItems: 'center', flex: 1 }}>
-                <Text style={{ fontSize: 14, fontWeight: '600', marginBottom: 8 }}>Engagement</Text>
-                <RingProgress value={52} size={80} stroke={8} color="#8b5cf6" label="52%" />
-                <Text style={{ fontSize: 18, fontWeight: '700', marginTop: 8 }}>23,594</Text>
+                <Text style={{ fontSize: 14, fontWeight: '600', marginBottom: 8 }}>Route Optimization</Text>
+                <RingProgress value={76} size={80} stroke={8} color="#8b5cf6" label="76%" />
+                <Text style={{ fontSize: 18, fontWeight: '700', marginTop: 8 }}>Optimized</Text>
               </View>
               
               {/* Second vertical divider */}
@@ -256,31 +301,31 @@ export default function Dashboard() {
               
               {/* Third ring progress */}
               <View style={{ alignItems: 'center', flex: 1 }}>
-                <Text style={{ fontSize: 14, fontWeight: '600', marginBottom: 8 }}>Retention</Text>
-                <RingProgress value={89} size={80} stroke={8} color={COLORS.success} label="89%" />
-                <Text style={{ fontSize: 18, fontWeight: '700', marginTop: 8 }}>12,047</Text>
+                <Text style={{ fontSize: 14, fontWeight: '600', marginBottom: 8 }}>On-Time Delivery</Text>
+                <RingProgress value={94} size={80} stroke={8} color={COLORS.success} label="94%" />
+                <Text style={{ fontSize: 18, fontWeight: '700', marginTop: 8 }}>Deliveries</Text>
               </View>
             </View>
           </DashboardCard>
 
-          {/* CARD #6: Sales This Year */}
-          <DashboardCard title="Sales This Year" style={{ 
+          {/* CARD #6: Monthly Revenue */}
+          <DashboardCard title="Monthly Revenue" style={{ 
            minHeight: 200,
            maxWidth: 650
            }}>
             <View style={styles.rowStart}>
-              <Text style={styles.kpiLarge}>$65,129</Text>
-              <Chip text="↑ 8.6%" tone="success" style={{ marginLeft: 8, alignSelf: 'center' }} />
+              <Text style={styles.kpiLarge}>$45,129</Text>
+              <Chip text="↑ 12.3%" tone="success" style={{ marginLeft: 8, alignSelf: 'center' }} />
             </View>
             
             <View style={{ marginTop: SPACING.md }}>
               <ProgressBar 
-                value={78} 
+                value={68} 
                 height={12}
                 color={COLORS.primary} 
                 style={{ marginVertical: 8 }} 
               />
-              <Text style={styles.sub}>285 left to Goal</Text>
+              <Text style={styles.sub}>$15K left to monthly goal</Text>
             </View>
           </DashboardCard>
 
@@ -288,29 +333,40 @@ export default function Dashboard() {
           <DashboardCard noHeader>
             <View style={styles.rowBetween}>
               <View style={{ alignItems: 'center', flex: 1 }}>
-                <Text style={styles.cardTitle}>Monthly</Text>
-                <RingProgress value={65} size={100} stroke={10} color={COLORS.primary} label="65%" />
-                <Text style={[styles.kpi, { marginTop: 8 }]}>65,127</Text>
-                <Text style={[styles.percentChange, { color: COLORS.success }]}>16.5% (55.21 USD)</Text>
+                <Text style={styles.cardTitle}>This Month</Text>
+                <RingProgress value={68} size={100} stroke={10} color={COLORS.primary} label="68%" />
+                <Text style={[styles.kpi, { marginTop: 8 }]}>2,847 km</Text>
+                <Text style={[styles.percentChange, { color: COLORS.success }]}>+8.2% vs last month</Text>
               </View>
               
               <View style={{ alignItems: 'center', flex: 1 }}>
-                <Text style={styles.cardTitle}>Yearly</Text>
+                <Text style={styles.cardTitle}>This Year</Text>
                 <RingProgress value={84} size={100} stroke={10} color="#8b5cf6" label="84%" />
-                <Text style={[styles.kpi, { marginTop: 8 }]}>984,246</Text>
-                <Text style={[styles.percentChange, { color: COLORS.success }]}>24.9% (267.35 USD)</Text>
+                <Text style={[styles.kpi, { marginTop: 8 }]}>34,128 km</Text>
+                <Text style={[styles.percentChange, { color: COLORS.success }]}>+15.7% vs last year</Text>
               </View>
             </View>
           </DashboardCard>
           
-          {/* CARD #8: Quick Navigation - Example of a new card that fits into the grid */}
-          <DashboardCard title="Quick Access">
-            <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
-              <NavButton href="/ecommerce" label="eCommerce" />
-              <NavButton href="/widgets" label="Widgets" />
-              <NavButton href="/forms" label="Forms" />
-              <NavButton href="/settings" label="Settings" />
-            </View>
+  
+            {/* CARD #8: Vehicle Activity Log - NestedTableRN */}
+          <DashboardCard title="Vehicle Activity Log" showOptions>
+            <NestedTableRN
+              data={vehicleTrackingData}
+              configuration={{
+                detailsTemplate: true,
+                tableLayout: { hover: true },
+                testID: "vehicle-activity-table"
+              }}
+              pagination={true}
+              initialRowsPerPage={3}
+              zebra={true}
+              stickyHeader={false} // Disable sticky header in card
+              style={{ flex: 1, marginTop: 8 }}
+              onRowClickEvent={(event, index) => {
+                console.log('Vehicle row clicked:', index);
+              }}
+            />
           </DashboardCard>
         </CardGrid>
       </Container>
@@ -323,33 +379,24 @@ export default function Dashboard() {
  * ------------------
  * Creates a grid of equally sized and spaced cards
  */
-function CardGrid({ children, spacing = 16, columns = 2 }) {
+function CardGrid({ children, spacing, columns }) {
   return (
-    <View style={{ 
-      flexDirection: 'row', 
-      flexWrap: 'wrap', 
-      marginLeft: -spacing/2,
-      marginRight: -spacing/2,
+    <View style={{
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      marginHorizontal: -spacing / 2,
+      marginVertical: spacing / 2,
     }}>
       {React.Children.map(children, (child, index) => {
-        // Check if child is valid and has props before accessing columnSpan
-        const columnSpan = child && child.props && child.props.columnSpan ? child.props.columnSpan : 1;
+        const cardStyle = {
+          width: columns === 1 ? '100%' : '50%',
+          paddingHorizontal: spacing / 2,
+          paddingVertical: spacing / 2,
+        };
         
         return (
-          <View style={[
-            styles.gridItem, 
-            { 
-              padding: spacing/2, 
-              width: `${(100/columns) * columnSpan}%` 
-            }
-          ]}>
-            {child && React.isValidElement(child) ? 
-              React.cloneElement(child, {
-                style: {
-                  ...(child.props.style || {}),
-                  height: child.props.expandHeight ? '100%' : undefined,
-                }
-              }) : child}
+          <View style={cardStyle}>
+            {child}
           </View>
         );
       })}
@@ -559,6 +606,18 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     paddingVertical: 12,
     marginTop: 6,
+  },
+    topMapCard: {
+    minHeight: 350,
+    maxHeight: 450,
+    marginBottom: 16,
+    borderRadius: 12,
+  },
+
+  mapViewStyle: {
+    flex: 1,
+    minHeight: 320,
+    borderRadius: 12,
   },
   mapPlaceholderText: {
     fontSize: 18,
