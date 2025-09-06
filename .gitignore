@@ -39,6 +39,7 @@ pnpm-debug.log*
 .DS_Store
 Thumbs.db
 *.pem
+*.txt
 
 # local env files
 .env
