@@ -10,11 +10,11 @@ import {
   Pressable 
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, SPACING } from '../../lib/theme';
-import Card from '../ui/Card';
-import Button from '../ui/Button';
-import ProgressBar from '../ui/ProgressBar';
-import ProfileEditModal from './profileEditModal'; // Your existing modal
+import { COLORS, SPACING } from '../lib/theme';
+import Card from '../components/ui/Card';
+import Button from '../components/ui/Button';
+import ProgressBar from '../components/ui/ProgressBar';
+import ProfileEditModal from '../components/UserManagement/profileEditModal'; // Your existing modal
 
 const ProfilePage = ({ userId }) => {
   const [loading, setLoading] = useState(true);
