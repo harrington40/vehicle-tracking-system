@@ -4,19 +4,18 @@ import { Box, VStack, HStack, Text, Icon, Pressable, Badge, Divider } from "nati
 import { Ionicons } from "@expo/vector-icons";
 import { useLayout } from "./LayoutContext";
 import { COLORS } from "../../lib/theme";
+import { useAuth } from "../../lib/authContext";
 
-// Updated navigation for vehicle tracking app
+
 function buildSections(session) {
   if (!session) {
-    return [
-      {
-        title: null,
-        items: [
-          { href: "/", label: "Landing", icon: "home-outline" },
-          { href: "/login", label: "Login", icon: "log-in-outline" }
-        ]
-      }
-    ];
+    return [{
+      title: null,
+      items: [
+        { href: "/", label: "LandingPage", icon: "home-outline" },
+        { href: "/loginPage", label: "Login", icon: "log-in-outline" }
+      ]
+    }];
   }
   return [
     {
@@ -56,7 +55,6 @@ function buildSections(session) {
     }
   ];
 }
-
 
 export default function Sidebar() {
   const pathname = usePathname();
@@ -102,7 +100,7 @@ export default function Sidebar() {
         overflow="auto"
         py={4}
       >
-        {NAV_SECTIONS.map((section, sIndex) => (
+        {sections.map((section, sIndex) => (
           <VStack key={sIndex} mt={sIndex > 0 ? 6 : 2} space={1} px={collapsed ? 2 : 2}>
             {/* Section Title */}
             {section.title && !collapsed && (
