@@ -8,9 +8,9 @@ export default function LandingPage() {
   const router = useRouter();
   const { session } = useAuth();
 
-  useEffect(() => {
-    if (session) router.replace('/dashboard');
-  }, [session]);
+//  useEffect(() => {
+//    if (session) router.replace('/dashboard');
+//  }, [session]);
 
   return (
     <ScrollView bg="gray.50">
@@ -21,8 +21,8 @@ export default function LandingPage() {
             <Text fontSize="xl" fontWeight="700" color="blue.700">VTrack Telematics</Text>
           </HStack>
           <HStack space={3}>
-            <Button variant="ghost" onPress={() => router.push('/login')}>Login</Button>
-            <Button onPress={() => router.push('/login')}>Get Started</Button>
+            <Button variant="ghost" onPress={() => router.push('/loginPage')}>Login</Button>
+            <Button onPress={() => router.push('/loginPage')}>Get Started</Button>
           </HStack>
         </HStack>
 
@@ -34,10 +34,10 @@ export default function LandingPage() {
             Monitor vehicles, predict maintenance, optimize routes, and secure assets with a unified telematics platform.
           </Text>
           <HStack space={4}>
-            <Button flex={1} onPress={() => router.push('/login')} leftIcon={<Icon as={Ionicons} name="log-in" size="sm" />}>
+            <Button flex={1} onPress={() => router.push('/ ')} leftIcon={<Icon as={Ionicons} name="log-in" size="sm" />}>
               Access Dashboard
             </Button>
-            <Button flex={1} variant="outline" onPress={() => router.push('/login')} leftIcon={<Icon as={Ionicons} name="analytics" size="sm" />}>
+            <Button flex={1} variant="outline" onPress={() => router.push('/loginPage')} leftIcon={<Icon as={Ionicons} name="analytics" size="sm" />}>
               Start Trial
             </Button>
           </HStack>

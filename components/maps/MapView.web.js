@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { View, StyleSheet, Text, TouchableOpacity, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -14,11 +14,20 @@ export default function OSMMap({
     zoom: 13
   },
   showControls = true,
+  children,            // ← add this
+  onWebMapReady,
 }) {
   //const { getAccessTokenSilently } = useAuth0();
   const [isMapLoaded, setIsMapLoaded] = useState(false);
   const [showVehicleList, setShowVehicleList] = useState(false);
   const iframeRef = useRef(null);
+
+
+
+  const postToMap = (message) => {
+    iframeRef.current?.contentWindow?.postMessage(message, "*");
+  };
+
 
   // Use demo vehicles if none provided
   const demoVehicles = vehicles.length > 0 ? vehicles : [
@@ -43,7 +52,6 @@ export default function OSMMap({
   // After iframe loads, send demo token
   const onIframeLoad = async () => {
     setIsMapLoaded(true);
-    
     // Send demo token for now (remove Auth0 logic)
     setTimeout(() => {
       iframeRef.current?.contentWindow?.postMessage(
@@ -52,6 +60,20 @@ export default function OSMMap({
       );
     }, 1000);
   };
+
+
+  useEffect(() => {
+    const handler = (event) => {
+      if (event?.data?.type === 'mapReady') {
+        onWebMapReady?.({ postToMap }); // provide a minimal handle
+      }
+    };
+    if (Platform.OS === 'web') window.addEventListener('message', handler);
+    return () => {
+      if (Platform.OS === 'web') window.removeEventListener('message', handler);
+    };
+  }, [onWebMapReady]);
+
 
 
   // Create the map HTML content with Auth0 integration
@@ -320,6 +342,16 @@ export default function OSMMap({
               <Text style={styles.loadingText}>Loading Interactive Map...</Text>
             </View>
           )}
+
+          {/* Absolute overlay to host React children; inject postToMap */}
+          <View style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
+            {React.Children.map(children, child =>
+              React.isValidElement(child)
+                ? React.cloneElement(child, { postToMap, isMapLoaded })
+                : child
+            )}
+          </View>
+
         </View>
 
         {/* Vehicle List Toggle */}

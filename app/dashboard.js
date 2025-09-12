@@ -6,14 +6,22 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../lib/authContext';
 
 export default function Dashboard() {
-  const { session, logout } = useAuth();
+  const { session, logout,loading } = useAuth();
   const router = useRouter();
+  
 
   useEffect(() => {
-    if (!session) router.replace('/login');
-  }, [session]);
+    if (!loading && !session) router.replace("/loginPage");
+  }, [loading, session, router]);
 
-  if (!session) return null;
+
+    if (loading || !session) {
+    return (
+      <View style={{ flex:1, alignItems:"center", justifyContent:"center", backgroundColor:"#f5f7fa" }}>
+        <Text style={{ color:"#64748b" }}>Authenticating...</Text>
+      </View>
+    );
+  }
 
   return (
     <ScrollView style={{ flex: 1, backgroundColor: '#f5f7fa' }} contentContainerStyle={{ padding: 16 }}>

@@ -36,7 +36,7 @@ export default function LoginPage() {
       } else {
         await register({ name: form.name.trim(), email: form.email.trim(), password: form.password });
       }
-      router.replace('/dashboard');
+      router.replace('/index.js');
     } catch (e) {
       setError(e.message || 'Authentication failed');
     } finally {

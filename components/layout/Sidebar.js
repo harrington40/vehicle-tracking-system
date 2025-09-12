@@ -12,7 +12,7 @@ function buildSections(session) {
     return [{
       title: null,
       items: [
-        { href: "/", label: "LandingPage", icon: "home-outline" },
+        
         { href: "/loginPage", label: "Login", icon: "log-in-outline" }
       ]
     }];
@@ -21,6 +21,7 @@ function buildSections(session) {
     {
       title: null,
       items: [
+        { href: "/", label: "Landing", icon: "home-outline" },
         { href: "/dashboard", label: "Dashboard", icon: "speedometer-outline" },
         { href: "/vehicles", label: "Vehicles", icon: "car-outline", badge: "12" }
       ]
