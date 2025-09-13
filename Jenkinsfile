@@ -13,7 +13,7 @@ pipeline {
 
   options {
     timestamps()
-    wrap([$class: 'AnsiColorBuildWrapper', colorMapName: 'xterm'])
+    // wrap([$class: 'AnsiColorBuildWrapper', colorMapName: 'xterm'])  // <-- remove this
     buildDiscarder(logRotator(numToKeepStr: '30'))
     timeout(time: 75, unit: 'MINUTES')
     disableConcurrentBuilds()
@@ -23,11 +23,7 @@ pipeline {
     NODE_OPTIONS = "--max-old-space-size=4096"
     GRADLE_USER_HOME = "${WORKSPACE}/.gradle"
     WEB_OUT = "web-dist"
-    // Android signing is pulled via withCredentials later.
-    // Labels/toggles expected to exist in the agent/global env:
-    // ANDROID_LABEL, MAC_LABEL, IOS_ENABLED, ENABLE_PLAY_DEPLOY, ENABLE_APPSTORE_DEPLOY
-    // Domain/env host vars expected globally:
-    // DOMAIN_TEST, DOMAIN_STAGING, DOMAIN_PROD, DEPLOY_HOST
+    // ANDROID_LABEL, MAC_LABEL, IOS_ENABLED, ENABLE_PLAY_DEPLOY, ENABLE_APPSTORE_DEPLOY, DOMAIN_TEST/STAGING/PROD, DEPLOY_HOST expected in env
   }
 
   stages {
@@ -200,8 +196,6 @@ EOF
         }
       }
     }
-
-    // ----------------- PLACEHOLDERS: Store deploys (skipped until enabled) -----------------
 
     stage('Deploy Android (Google Play)') {
       when {
