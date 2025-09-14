@@ -53,100 +53,123 @@ pipeline {
       }
     }
 
-    stage('Node 18 Setup') {
-      steps {
-        sh '''
-          set -eux
-          # Check what's in the ci/ directory
-          ls -la ci/ || true
+stage('Node 18 Setup') {
+  steps {
+    sh '''
+      set -eux
+      # Check what's in the ci/ directory
+      ls -la ci/ || true
+      
+      # If the script exists, try to make it executable and run it
+      if [ -f "ci/use-node-18.sh" ]; then
+        echo "Found use-node-18.sh script, making it executable..."
+        chmod +x ci/use-node-18.sh
+        # Try to execute it directly
+        ./ci/use-node-18.sh || echo "Script execution failed, continuing with manual setup..."
+      fi
+      
+      # Manual Node.js setup as fallback
+      if ! command -v node >/dev/null 2>&1 || ! node --version | grep -q "v18"; then
+        echo "Setting up Node.js 18 manually..."
+        
+        # Method 1: Use binary download (no root required)
+        echo "Trying binary download..."
+        NODE_VERSION="18.20.4"  # Use a stable Node.js 18 version
+        ARCH=$(uname -m)
+        case $ARCH in
+          x86_64) ARCH="x64" ;;
+          aarch64) ARCH="arm64" ;;
+          *) ARCH="x64" ;;
+        esac
+        
+        # Download and extract Node.js
+        curl -O https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-${ARCH}.tar.xz || \
+        curl -O https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-${ARCH}.tar.gz
+        
+        if [ -f "node-v${NODE_VERSION}-linux-${ARCH}.tar.xz" ]; then
+          tar -xf node-v${NODE_VERSION}-linux-${ARCH}.tar.xz
+        elif [ -f "node-v${NODE_VERSION}-linux-${ARCH}.tar.gz" ]; then
+          tar -xzf node-v${NODE_VERSION}-linux-${ARCH}.tar.gz
+        else
+          echo "Failed to download Node.js binary"
+          exit 1
+        fi
+        
+        # Add Node.js to PATH (current session only)
+        export PATH="$PWD/node-v${NODE_VERSION}-linux-${ARCH}/bin:$PATH"
+        
+        # Verify installation
+        if command -v node >/dev/null 2>&1; then
+          echo "Node.js installed successfully via binary download"
+        else
+          echo "Binary download failed, trying nvm..."
           
-          # If the script exists, try to make it executable and run it
-          if [ -f "ci/use-node-18.sh" ]; then
-            echo "Found use-node-18.sh script, making it executable..."
-            chmod +x ci/use-node-18.sh
-            # Try to execute it directly
-            ./ci/use-node-18.sh || echo "Script execution failed, continuing with manual setup..."
-          fi
+          # Method 2: Try nvm with proper parameter setup
+          _=nvm-install
+          export NVM_DIR="$HOME/.nvm"
+          mkdir -p "$NVM_DIR"
           
-          # Manual Node.js setup as fallback
-          if ! command -v node >/dev/null 2>&1 || ! node --version | grep -q "v18"; then
-            echo "Setting up Node.js 18 manually..."
-            
-            # Method 1: Use Nodesource repository (more reliable than nvm in Jenkins)
-            curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && \
-            apt-get install -y nodejs || \
-            echo "Nodesource setup failed, trying alternative methods..."
-            
-            # Method 2: Use binary download if apt fails
-            if ! command -v node >/dev/null 2>&1; then
-              echo "Trying binary download..."
-              NODE_VERSION="18.17.0"
-              ARCH=$(uname -m)
-              case $ARCH in
-                x86_64) ARCH="x64" ;;
-                aarch64) ARCH="arm64" ;;
-                *) ARCH="x64" ;;
-              esac
-              
-              curl -O https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-${ARCH}.tar.xz
-              tar -xf node-v${NODE_VERSION}-linux-${ARCH}.tar.xz
-              export PATH="$PWD/node-v${NODE_VERSION}-linux-${ARCH}/bin:$PATH"
-              ln -sf "$PWD/node-v${NODE_VERSION}-linux-${ARCH}/bin/node" /usr/local/bin/node
-              ln -sf "$PWD/node-v${NODE_VERSION}-linux-${ARCH}/bin/npm" /usr/local/bin/npm
-              ln -sf "$PWD/node-v${NODE_VERSION}-linux-${ARCH}/bin/npx" /usr/local/bin/npx
-            fi
-            
-            # Method 3: Try nvm with proper parameter setup (if above methods fail)
-            if ! command -v node >/dev/null 2>&1; then
-              echo "Trying nvm with proper setup..."
-              # Set the _ parameter that nvm expects
-              _=nvm-install
-              export NVM_DIR="$HOME/.nvm"
-              mkdir -p "$NVM_DIR"
-              curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash
-              [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh" --no-use
-              nvm install 18 || true
-              nvm use 18 || true
-            fi
-          fi
+          # Download and install nvm
+          curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash
           
-          echo "Node.js version:"
-          node --version || { echo "Node.js not available"; exit 1; }
-          echo "npm version:"
-          npm --version || true
-        '''
-      }
-    }
+          # Load nvm
+          [ -s "$NVM_DIR/nvm.sh" ] && \\. "$NVM_DIR/nvm.sh" --no-use
+          
+          # Install and use Node.js 18
+          nvm install 18 || nvm install-latest-npm
+          nvm use 18 || true
+        fi
+      fi
+      
+      echo "Node.js version:"
+      node --version || { echo "Node.js not available"; exit 1; }
+      echo "npm version:"
+      npm --version || true
+      
+      # Make node available for subsequent stages
+      NODE_PATH=$(which node)
+      NPM_PATH=$(which npm)
+      echo "Node path: $NODE_PATH"
+      echo "NPM path: $NPM_PATH"
+    '''
+  }
+}
 
-    stage('Install dependencies') {
-      steps {
-        sh '''
-          set -eux
-          # Prefer yarn if present with yarn.lock, else npm
-          if command -v yarn >/dev/null 2>&1 && [ -f yarn.lock ]; then
-            if [ "${CLEAN_NODE_MODULES:-false}" = "true" ]; then rm -rf node_modules; fi
-            yarn install --frozen-lockfile || yarn install
-          else
-            if [ -f package-lock.json ]; then
-              npm ci || npm install
-            else
-              npm install
-            fi
-          fi
-        '''
-      }
-    }
+stage('Install dependencies') {
+  steps {
+    sh '''
+      set -eux
+      # Ensure we're using the right Node.js version
+      export PATH="$PWD/node-v18.20.4-linux-${ARCH}/bin:$PATH" 2>/dev/null || true
+      
+      # Prefer yarn if present with yarn.lock, else npm
+      if command -v yarn >/dev/null 2>&1 && [ -f yarn.lock ]; then
+        if [ "${CLEAN_NODE_MODULES:-false}" = "true" ]; then rm -rf node_modules; fi
+        yarn install --frozen-lockfile || yarn install
+      else
+        if [ -f package-lock.json ]; then
+          npm ci || npm install
+        else
+          npm install
+        fi
+      fi
+    '''
+  }
+}
 
-    stage('Ensure native folders (prebuild)') {
-      steps {
-        sh '''
-          set -eux
-          npx expo --version || npx --yes @expo/cli --version
-          # Safe if already generated; helps first-time builds
-          npx expo prebuild --non-interactive || true
-        '''
-      }
-    }
+stage('Ensure native folders (prebuild)') {
+  steps {
+    sh '''
+      set -eux
+      # Ensure we're using the right Node.js version
+      export PATH="$PWD/node-v18.20.4-linux-${ARCH}/bin:$PATH" 2>/dev/null || true
+      
+      npx expo --version || npx --yes @expo/cli --version
+      # Safe if already generated; helps first-time builds
+      npx expo prebuild --non-interactive || true
+    '''
+  }
+}
 
     stage('Android') {
       when { anyOf { expression { params.PLATFORM in ['android','all'] } } }
