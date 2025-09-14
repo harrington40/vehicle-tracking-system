@@ -35,7 +35,7 @@ pipeline {
     stage('Bootstrap CI scripts') {
       steps {
         sh '''
-          set -euxo pipefail
+          set -eux
           test -f ci/use-node-18.sh
           chmod +x ci/use-node-18.sh || true
           if file ci/use-node-18.sh | grep -qi "CRLF"; then
