@@ -71,16 +71,47 @@ pipeline {
           # Manual Node.js setup as fallback
           if ! command -v node >/dev/null 2>&1 || ! node --version | grep -q "v18"; then
             echo "Setting up Node.js 18 manually..."
-            # Install Node.js 18 using nvm, fnm, or direct download
-            curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash || true
-            export NVM_DIR="$HOME/.nvm"
-            [ -s "$NVM_DIR/nvm.sh" ] && \\. "$NVM_DIR/nvm.sh"
-            nvm install 18 || true
-            nvm use 18 || true
+            
+            # Method 1: Use Nodesource repository (more reliable than nvm in Jenkins)
+            curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && \
+            apt-get install -y nodejs || \
+            echo "Nodesource setup failed, trying alternative methods..."
+            
+            # Method 2: Use binary download if apt fails
+            if ! command -v node >/dev/null 2>&1; then
+              echo "Trying binary download..."
+              NODE_VERSION="18.17.0"
+              ARCH=$(uname -m)
+              case $ARCH in
+                x86_64) ARCH="x64" ;;
+                aarch64) ARCH="arm64" ;;
+                *) ARCH="x64" ;;
+              esac
+              
+              curl -O https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-${ARCH}.tar.xz
+              tar -xf node-v${NODE_VERSION}-linux-${ARCH}.tar.xz
+              export PATH="$PWD/node-v${NODE_VERSION}-linux-${ARCH}/bin:$PATH"
+              ln -sf "$PWD/node-v${NODE_VERSION}-linux-${ARCH}/bin/node" /usr/local/bin/node
+              ln -sf "$PWD/node-v${NODE_VERSION}-linux-${ARCH}/bin/npm" /usr/local/bin/npm
+              ln -sf "$PWD/node-v${NODE_VERSION}-linux-${ARCH}/bin/npx" /usr/local/bin/npx
+            fi
+            
+            # Method 3: Try nvm with proper parameter setup (if above methods fail)
+            if ! command -v node >/dev/null 2>&1; then
+              echo "Trying nvm with proper setup..."
+              # Set the _ parameter that nvm expects
+              _=nvm-install
+              export NVM_DIR="$HOME/.nvm"
+              mkdir -p "$NVM_DIR"
+              curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash
+              [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh" --no-use
+              nvm install 18 || true
+              nvm use 18 || true
+            fi
           fi
           
           echo "Node.js version:"
-          node --version || true
+          node --version || { echo "Node.js not available"; exit 1; }
           echo "npm version:"
           npm --version || true
         '''
