@@ -43,24 +43,15 @@ pipeline {
       }
     }
 
-    stage('Prep agent') {
-      steps {
-        sh '''
-          set -eux
-          # Ensure helper script is executable and has LF endings (if dos2unix exists)
-          chmod +x ci/use-node-18.sh || true
-          command -v dos2unix >/dev/null 2>&1 && dos2unix ci/use-node-18.sh || true
-          head -n 1 ci/use-node-18.sh || true
-        '''
-      }
-    }
-
     stage('Checkout') {
       steps {
         checkout scm
         sh '''
           set -eux
           git --no-pager log -1 --pretty=oneline || true
+          # Make scripts executable immediately after checkout
+          chmod +x ci/use-node-18.sh || true
+          ls -la ci/use-node-18.sh || true
         '''
       }
     }
@@ -69,7 +60,8 @@ pipeline {
       steps {
         sh '''
           set -eux
-          ./ci/use-node-18.sh
+          # Use bash to source the script instead of executing it directly
+          source ci/use-node-18.sh
 
           # Prefer yarn if present with yarn.lock, else npm
           if command -v yarn >/dev/null 2>&1 && [ -f yarn.lock ]; then
@@ -90,7 +82,8 @@ pipeline {
       steps {
         sh '''
           set -eux
-          ./ci/use-node-18.sh
+          # Use bash to source the script
+          source ci/use-node-18.sh
           npx expo --version || npx --yes @expo/cli --version
           # Safe if already generated; helps first-time builds
           npx expo prebuild --non-interactive || true
@@ -110,7 +103,8 @@ pipeline {
         ]) {
           sh '''
             set -eux
-            ./ci/use-node-18.sh
+            # Use bash to source the script
+            source ci/use-node-18.sh
             export APP_ENV="${ENV}"
 
             case "${ENV}" in
@@ -150,7 +144,8 @@ EOF2
       steps {
         sh '''
           set -eux
-          ./ci/use-node-18.sh
+          # Use bash to source the script
+          source ci/use-node-18.sh
           export APP_ENV="${ENV}"
           npx pod-install ios
 
@@ -183,7 +178,8 @@ EOF2
       steps {
         sh '''
           set -eux
-          ./ci/use-node-18.sh
+          # Use bash to source the script
+          source ci/use-node-18.sh
           export APP_ENV="${ENV}"
           npx expo export --platform web --output-dir "${WEB_OUT}"
           printf "User-agent: *\\nDisallow:\\n" > ${WEB_OUT}/robots.txt
@@ -208,7 +204,8 @@ EOF2
                                            usernameVariable: 'SSH_USER')]) {
           sh '''
             set -eux
-            ./ci/use-node-18.sh
+            # Use bash to source the script
+            source ci/use-node-18.sh
             export APP_ENV="${ENV}"
 
             case "${ENV}" in
