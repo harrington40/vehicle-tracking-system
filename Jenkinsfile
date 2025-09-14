@@ -204,53 +204,53 @@ pipeline {
 }
 
     stage('Android') {
-      when { 
-        expression { params.PLATFORM in ['android','all'] } 
-      }
-      agent { 
-        label "${ANDROID_LABEL}" 
-      }
-      steps {
-        withCredentials([
-          file(credentialsId: env.ANDROID_KEYSTORE_ID, variable: 'KEYSTORE_FILE'),
-          string(credentialsId: env.ANDROID_KEY_ALIAS_ID,  variable: 'KEY_ALIAS'),
-          string(credentialsId: env.ANDROID_KEY_PASS_ID,   variable: 'KEY_PASS'),
-          string(credentialsId: env.ANDROID_STORE_PASS_ID, variable: 'STORE_PASS')
-        ]) {
-          sh '''
-            set -eux
-            export APP_ENV="${ENV}"
+       when { 
+         expression { params.PLATFORM in ['android','all'] } 
+//       }
+//       agent { 
+//         label "${ANDROID_LABEL}" 
+//       }
+//       steps {
+//         withCredentials([
+//           file(credentialsId: env.ANDROID_KEYSTORE_ID, variable: 'KEYSTORE_FILE'),
+//           string(credentialsId: env.ANDROID_KEY_ALIAS_ID,  variable: 'KEY_ALIAS'),
+//           string(credentialsId: env.ANDROID_KEY_PASS_ID,   variable: 'KEY_PASS'),
+//           string(credentialsId: env.ANDROID_STORE_PASS_ID, variable: 'STORE_PASS')
+//         ]) {
+//           sh '''
+//             set -eux
+//             export APP_ENV="${ENV}"
 
-            case "${ENV}" in
-              test) FLAVOR="Test" ;;
-              staging) FLAVOR="Staging" ;;
-              production) FLAVOR="Production" ;;
-            esac
+//             case "${ENV}" in
+//               test) FLAVOR="Test" ;;
+//               staging) FLAVOR="Staging" ;;
+//               production) FLAVOR="Production" ;;
+//             esac
 
-            cd android
-            mkdir -p ~/.gradle
-            cat > ~/.gradle/gradle.properties <<EOF2
-ORG_GRADLE_PROJECT_StorePassword=${STORE_PASS}
-ORG_GRADLE_PROJECT_KeyPassword=${KEY_PASS}
-ORG_GRADLE_PROJECT_KeyAlias=${KEY_ALIAS}
-EOF2
-            cp "${KEYSTORE_FILE}" app/release.keystore || true
+//             cd android
+//             mkdir -p ~/.gradle
+//             cat > ~/.gradle/gradle.properties <<EOF2
+// ORG_GRADLE_PROJECT_StorePassword=${STORE_PASS}
+// ORG_GRADLE_PROJECT_KeyPassword=${KEY_PASS}
+// ORG_GRADLE_PROJECT_KeyAlias=${KEY_ALIAS}
+// EOF2
+//             cp "${KEYSTORE_FILE}" app/release.keystore || true
 
-            ./gradlew --no-daemon clean
-            if [ "${USE_AAB}" = "true" ]; then
-              ./gradlew --no-daemon bundle${FLAVOR}${BUILD_TYPE}
-            else
-              ./gradlew --no-daemon assemble${FLAVOR}${BUILD_TYPE}
-            fi
+//             ./gradlew --no-daemon clean
+//             if [ "${USE_AAB}" = "true" ]; then
+//               ./gradlew --no-daemon bundle${FLAVOR}${BUILD_TYPE}
+//             else
+//               ./gradlew --no-daemon assemble${FLAVOR}${BUILD_TYPE}
+//             fi
 
-            ls -l app/build/outputs/{apk,bundle}/** || true
-          '''
-        }
-      }
-      post {
-        always { 
-          archiveArtifacts artifacts: 'android/app/build/outputs/**', allowEmptyArchive: true 
-        }
+//             ls -l app/build/outputs/{apk,bundle}/** || true
+//           '''
+//         }
+//       }
+//       post {
+//         always { 
+//           archiveArtifacts artifacts: 'android/app/build/outputs/**', allowEmptyArchive: true 
+//         }
       }
     }
 
@@ -258,39 +258,39 @@ EOF2
       when { 
         expression { params.PLATFORM in ['ios','all'] && env.IOS_ENABLED == '1' } 
       }
-      agent { 
-        label "${MAC_LABEL}" 
-      }
-      steps {
-        sh '''
-          set -eux
-          export APP_ENV="${ENV}"
-          npx pod-install ios
+      // agent { 
+      //   label "${MAC_LABEL}" 
+      // }
+      // steps {
+      //   sh '''
+      //     set -eux
+      //     export APP_ENV="${ENV}"
+      //     npx pod-install ios
 
-          case "${ENV}" in
-            test) SCHEME="VTracking Test";      EXPORT="ios/exportOptions.test.plist" ;;
-            staging) SCHEME="VTracking Staging"; EXPORT="ios/exportOptions.staging.plist" ;;
-            production) SCHEME="VTracking";     EXPORT="ios/exportOptions.prod.plist" ;;
-          esac
+      //     case "${ENV}" in
+      //       test) SCHEME="VTracking Test";      EXPORT="ios/exportOptions.test.plist" ;;
+      //       staging) SCHEME="VTracking Staging"; EXPORT="ios/exportOptions.staging.plist" ;;
+      //       production) SCHEME="VTracking";     EXPORT="ios/exportOptions.prod.plist" ;;
+      //     esac
 
-          mkdir -p ios/build
-          xcodebuild -workspace ios/VTracking.xcworkspace \
-            -scheme "${SCHEME}" -configuration Release -sdk iphoneos \
-            -archivePath ios/build/${SCHEME}.xcarchive archive | xcpretty || true
+      //     mkdir -p ios/build
+      //     xcodebuild -workspace ios/VTracking.xcworkspace \
+      //       -scheme "${SCHEME}" -configuration Release -sdk iphoneos \
+      //       -archivePath ios/build/${SCHEME}.xcarchive archive | xcpretty || true
 
-          xcodebuild -exportArchive \
-            -archivePath ios/build/${SCHEME}.xcarchive \
-            -exportOptionsPlist ${EXPORT} \
-            -exportPath ios/build | xcpretty || true
+      //     xcodebuild -exportArchive \
+      //       -archivePath ios/build/${SCHEME}.xcarchive \
+      //       -exportOptionsPlist ${EXPORT} \
+      //       -exportPath ios/build | xcpretty || true
 
-          ls -l ios/build || true
-        '''
-      }
-      post {
-        always { 
-          archiveArtifacts artifacts: 'ios/build/**', allowEmptyArchive: true 
-        }
-      }
+      //     ls -l ios/build || true
+      //   '''
+      // }
+      // post {
+      //   always { 
+      //     archiveArtifacts artifacts: 'ios/build/**', allowEmptyArchive: true 
+      //   }
+     // }
     }
 
     stage('Web Build') {
