@@ -188,6 +188,21 @@ pipeline {
       }
     }
 
+    stage('Check config') {
+  steps {
+    sh '''
+      set -eux
+      echo "Current app.json content:"
+      cat app.json || true
+      echo ""
+      echo "Checking if edgeToEdgeEnabled is set:"
+      grep -q "edgeToEdgeEnabled" app.json && echo "✓ edgeToEdgeEnabled found" || echo "⚠ edgeToEdgeEnabled not found"
+      echo "Checking if icon is set:"
+      grep -q "icon" app.json && echo "✓ icon found" || echo "⚠ icon not found"
+    '''
+  }
+}
+
     stage('Android') {
       when { 
         expression { params.PLATFORM in ['android','all'] } 
