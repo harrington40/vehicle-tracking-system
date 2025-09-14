@@ -39,72 +39,62 @@ pipeline {
   stages {
     stage('Echo params') {
       steps {
-        timestamps {
-          echo "ENV=${params.ENV} PLATFORM=${params.PLATFORM} BUILD_TYPE=${params.BUILD_TYPE}"
-        }
+        echo "ENV=${params.ENV} PLATFORM=${params.PLATFORM} BUILD_TYPE=${params.BUILD_TYPE}"
       }
     }
 
     stage('Prep agent') {
       steps {
-        timestamps {
-          sh '''
-            set -eux
-            # Ensure helper script is executable and has LF endings (if dos2unix exists)
-            chmod +x ci/use-node-18.sh || true
-            command -v dos2unix >/dev/null 2>&1 && dos2unix ci/use-node-18.sh || true
-            head -n 1 ci/use-node-18.sh || true
-          '''
-        }
+        sh '''
+          set -eux
+          # Ensure helper script is executable and has LF endings (if dos2unix exists)
+          chmod +x ci/use-node-18.sh || true
+          command -v dos2unix >/dev/null 2>&1 && dos2unix ci/use-node-18.sh || true
+          head -n 1 ci/use-node-18.sh || true
+        '''
       }
     }
 
     stage('Checkout') {
       steps {
-        timestamps {
-          checkout scm
-          sh '''
-            set -eux
-            git --no-pager log -1 --pretty=oneline || true
-          '''
-        }
+        checkout scm
+        sh '''
+          set -eux
+          git --no-pager log -1 --pretty=oneline || true
+        '''
       }
     }
 
     stage('Node 18 + install') {
       steps {
-        timestamps {
-          sh '''
-            set -eux
-            ./ci/use-node-18.sh
+        sh '''
+          set -eux
+          ./ci/use-node-18.sh
 
-            # Prefer yarn if present with yarn.lock, else npm
-            if command -v yarn >/dev/null 2>&1 && [ -f yarn.lock ]; then
-              if [ "${CLEAN_NODE_MODULES:-false}" = "true" ]; then rm -rf node_modules; fi
-              yarn install --frozen-lockfile || yarn install
+          # Prefer yarn if present with yarn.lock, else npm
+          if command -v yarn >/dev/null 2>&1 && [ -f yarn.lock ]; then
+            if [ "${CLEAN_NODE_MODULES:-false}" = "true" ]; then rm -rf node_modules; fi
+            yarn install --frozen-lockfile || yarn install
+          else
+            if [ -f package-lock.json ]; then
+              npm ci || npm install
             else
-              if [ -f package-lock.json ]; then
-                npm ci || npm install
-              else
-                npm install
-              fi
+              npm install
             fi
-          '''
-        }
+          fi
+        '''
       }
     }
 
     stage('Ensure native folders (prebuild)') {
       steps {
-        timestamps {
-          sh '''
-            set -eux
-            ./ci/use-node-18.sh
-            npx expo --version || npx --yes @expo/cli --version
-            # Safe if already generated; helps first-time builds
-            npx expo prebuild --non-interactive || true
-          '''
-        }
+        sh '''
+          set -eux
+          ./ci/use-node-18.sh
+          npx expo --version || npx --yes @expo/cli --version
+          # Safe if already generated; helps first-time builds
+          npx expo prebuild --non-interactive || true
+        '''
       }
     }
 
@@ -118,37 +108,35 @@ pipeline {
           string(credentialsId: env.ANDROID_KEY_PASS_ID,   variable: 'KEY_PASS'),
           string(credentialsId: env.ANDROID_STORE_PASS_ID, variable: 'STORE_PASS')
         ]) {
-          timestamps {
-            sh '''
-              set -eux
-              ./ci/use-node-18.sh
-              export APP_ENV="${ENV}"
+          sh '''
+            set -eux
+            ./ci/use-node-18.sh
+            export APP_ENV="${ENV}"
 
-              case "${ENV}" in
-                test) FLAVOR="Test" ;;
-                staging) FLAVOR="Staging" ;;
-                production) FLAVOR="Production" ;;
-              esac
+            case "${ENV}" in
+              test) FLAVOR="Test" ;;
+              staging) FLAVOR="Staging" ;;
+              production) FLAVOR="Production" ;;
+            esac
 
-              cd android
-              mkdir -p ~/.gradle
-              cat > ~/.gradle/gradle.properties <<EOF2
+            cd android
+            mkdir -p ~/.gradle
+            cat > ~/.gradle/gradle.properties <<EOF2
 ORG_GRADLE_PROJECT_StorePassword=${STORE_PASS}
 ORG_GRADLE_PROJECT_KeyPassword=${KEY_PASS}
 ORG_GRADLE_PROJECT_KeyAlias=${KEY_ALIAS}
 EOF2
-              cp "${KEYSTORE_FILE}" app/release.keystore || true
+            cp "${KEYSTORE_FILE}" app/release.keystore || true
 
-              ./gradlew --no-daemon clean
-              if [ "${USE_AAB}" = "true" ]; then
-                ./gradlew --no-daemon bundle${FLAVOR}${BUILD_TYPE}
-              else
-                ./gradlew --no-daemon assemble${FLAVOR}${BUILD_TYPE}
-              fi
+            ./gradlew --no-daemon clean
+            if [ "${USE_AAB}" = "true" ]; then
+              ./gradlew --no-daemon bundle${FLAVOR}${BUILD_TYPE}
+            else
+              ./gradlew --no-daemon assemble${FLAVOR}${BUILD_TYPE}
+            fi
 
-              ls -l app/build/outputs/{apk,bundle}/** || true
-            '''
-          }
+            ls -l app/build/outputs/{apk,bundle}/** || true
+          '''
         }
       }
       post {
@@ -160,32 +148,30 @@ EOF2
       when { anyOf { expression { params.PLATFORM in ['ios','all'] && env.IOS_ENABLED == '1' } } }
       agent { label "${MAC_LABEL}" }
       steps {
-        timestamps {
-          sh '''
-            set -eux
-            ./ci/use-node-18.sh
-            export APP_ENV="${ENV}"
-            npx pod-install ios
+        sh '''
+          set -eux
+          ./ci/use-node-18.sh
+          export APP_ENV="${ENV}"
+          npx pod-install ios
 
-            case "${ENV}" in
-              test) SCHEME="VTracking Test";      EXPORT="ios/exportOptions.test.plist" ;;
-              staging) SCHEME="VTracking Staging"; EXPORT="ios/exportOptions.staging.plist" ;;
-              production) SCHEME="VTracking";     EXPORT="ios/exportOptions.prod.plist" ;;
-            esac
+          case "${ENV}" in
+            test) SCHEME="VTracking Test";      EXPORT="ios/exportOptions.test.plist" ;;
+            staging) SCHEME="VTracking Staging"; EXPORT="ios/exportOptions.staging.plist" ;;
+            production) SCHEME="VTracking";     EXPORT="ios/exportOptions.prod.plist" ;;
+          esac
 
-            mkdir -p ios/build
-            xcodebuild -workspace ios/VTracking.xcworkspace \
-              -scheme "${SCHEME}" -configuration Release -sdk iphoneos \
-              -archivePath ios/build/${SCHEME}.xcarchive archive | xcpretty || true
+          mkdir -p ios/build
+          xcodebuild -workspace ios/VTracking.xcworkspace \
+            -scheme "${SCHEME}" -configuration Release -sdk iphoneos \
+            -archivePath ios/build/${SCHEME}.xcarchive archive | xcpretty || true
 
-            xcodebuild -exportArchive \
-              -archivePath ios/build/${SCHEME}.xcarchive \
-              -exportOptionsPlist ${EXPORT} \
-              -exportPath ios/build | xcpretty || true
+          xcodebuild -exportArchive \
+            -archivePath ios/build/${SCHEME}.xcarchive \
+            -exportOptionsPlist ${EXPORT} \
+            -exportPath ios/build | xcpretty || true
 
-            ls -l ios/build || true
-          '''
-        }
+          ls -l ios/build || true
+        '''
       }
       post {
         always { archiveArtifacts artifacts: 'ios/build/**', allowEmptyArchive: true }
@@ -195,16 +181,14 @@ EOF2
     stage('Web Build') {
       when { anyOf { expression { params.PLATFORM in ['web','all'] } } }
       steps {
-        timestamps {
-          sh '''
-            set -eux
-            ./ci/use-node-18.sh
-            export APP_ENV="${ENV}"
-            npx expo export --platform web --output-dir "${WEB_OUT}"
-            printf "User-agent: *\\nDisallow:\\n" > ${WEB_OUT}/robots.txt
-            ls -la ${WEB_OUT} || true
-          '''
-        }
+        sh '''
+          set -eux
+          ./ci/use-node-18.sh
+          export APP_ENV="${ENV}"
+          npx expo export --platform web --output-dir "${WEB_OUT}"
+          printf "User-agent: *\\nDisallow:\\n" > ${WEB_OUT}/robots.txt
+          ls -la ${WEB_OUT} || true
+        '''
       }
       post {
         always { archiveArtifacts artifacts: '${WEB_OUT}/**', allowEmptyArchive: true }
@@ -222,41 +206,39 @@ EOF2
         withCredentials([sshUserPrivateKey(credentialsId: 'web-deploy-ssh',
                                            keyFileVariable: 'SSH_KEY',
                                            usernameVariable: 'SSH_USER')]) {
-          timestamps {
-            sh '''
+          sh '''
+            set -eux
+            ./ci/use-node-18.sh
+            export APP_ENV="${ENV}"
+
+            case "${ENV}" in
+              test)       DOMAIN="app-test.transtechologies.com" ;;
+              staging)    DOMAIN="app-staging.transtechologies.com" ;;
+              production) DOMAIN="app.transtechologies.com" ;;
+            esac
+
+            RELEASE="$(git rev-parse --short=12 HEAD)"
+            TAR="site-${RELEASE}.tar.gz"
+            tar -C "${WEB_OUT}" -czf "${TAR}" .
+
+            DEPLOY_HOST="deploy.transtechologies.com"
+            rsync -e "ssh -i ${SSH_KEY} -o StrictHostKeyChecking=no" -avz "${TAR}" \
+              "${SSH_USER}@${DEPLOY_HOST}:/tmp/"
+
+            ssh -i "${SSH_KEY}" -o StrictHostKeyChecking=no "${SSH_USER}@${DEPLOY_HOST}" bash -s <<'EOS'
               set -eux
-              ./ci/use-node-18.sh
-              export APP_ENV="${ENV}"
-
-              case "${ENV}" in
-                test)       DOMAIN="app-test.transtechologies.com" ;;
-                staging)    DOMAIN="app-staging.transtechologies.com" ;;
-                production) DOMAIN="app.transtechologies.com" ;;
-              esac
-
-              RELEASE="$(git rev-parse --short=12 HEAD)"
-              TAR="site-${RELEASE}.tar.gz"
-              tar -C "${WEB_OUT}" -czf "${TAR}" .
-
-              DEPLOY_HOST="deploy.transtechologies.com"
-              rsync -e "ssh -i ${SSH_KEY} -o StrictHostKeyChecking=no" -avz "${TAR}" \
-                "${SSH_USER}@${DEPLOY_HOST}:/tmp/"
-
-              ssh -i "${SSH_KEY}" -o StrictHostKeyChecking=no "${SSH_USER}@${DEPLOY_HOST}" bash -s <<'EOS'
-                set -eux
-                RELEASE="'${RELEASE}'"
-                DEPLOY_DIR="/var/www/vtracking"
-                RELEASE_DIR="${DEPLOY_DIR}/releases/${RELEASE}"
-                mkdir -p "${DEPLOY_DIR}/releases" "${RELEASE_DIR}"
-                tar -C "${RELEASE_DIR}" -xzf "/tmp/site-${RELEASE}.tar.gz"
-                ln -sfn "${RELEASE_DIR}" "${DEPLOY_DIR}/current"
-                sudo nginx -t && sudo systemctl reload nginx
-                rm -f "/tmp/site-${RELEASE}.tar.gz"
+              RELEASE="'${RELEASE}'"
+              DEPLOY_DIR="/var/www/vtracking"
+              RELEASE_DIR="${DEPLOY_DIR}/releases/${RELEASE}"
+              mkdir -p "${DEPLOY_DIR}/releases" "${RELEASE_DIR}"
+              tar -C "${RELEASE_DIR}" -xzf "/tmp/site-${RELEASE}.tar.gz"
+              ln -sfn "${RELEASE_DIR}" "${DEPLOY_DIR}/current"
+              sudo nginx -t && sudo systemctl reload nginx
+              rm -f "/tmp/site-${RELEASE}.tar.gz"
 EOS
 
-              curl -fsS "https://${DOMAIN}/health" || echo "Health probe failed (site may be warming)"
-            '''
-          }
+            curl -fsS "https://${DOMAIN}/health" || echo "Health probe failed (site may be warming)"
+          '''
         }
       }
     }
@@ -270,13 +252,11 @@ EOS
         }
       }
       steps {
-        timestamps {
-          script {
-            if (env.ENABLE_PLAY_DEPLOY != '1') {
-              echo "Skipping Google Play deploy (placeholder; set ENABLE_PLAY_DEPLOY=1 when ready)."
-            } else {
-              echo "TODO: fastlane supply here"
-            }
+        script {
+          if (env.ENABLE_PLAY_DEPLOY != '1') {
+            echo "Skipping Google Play deploy (placeholder; set ENABLE_PLAY_DEPLOY=1 when ready)."
+          } else {
+            echo "TODO: fastlane supply here"
           }
         }
       }
@@ -290,13 +270,11 @@ EOS
         }
       }
       steps {
-        timestamps {
-          script {
-            if (env.ENABLE_APPSTORE_DEPLOY != '1') {
-              echo "Skipping App Store deploy (placeholder; set ENABLE_APPSTORE_DEPLOY=1 when ready)."
-            } else {
-              echo "TODO: fastlane deliver here"
-            }
+        script {
+          if (env.ENABLE_APPSTORE_DEPLOY != '1') {
+            echo "Skipping App Store deploy (placeholder; set ENABLE_APPSTORE_DEPLOY=1 when ready)."
+          } else {
+            echo "TODO: fastlane deliver here"
           }
         }
       }
@@ -305,14 +283,10 @@ EOS
 
   post {
     success { 
-      timestamps {
-        echo "✅ Build OK (${params.PLATFORM} @ ${params.ENV})"
-      }
+      echo "✅ Build OK (${params.PLATFORM} @ ${params.ENV})"
     }
     failure { 
-      timestamps {
-        echo "❌ Build failed"
-      }
+      echo "❌ Build failed"
     }
   }
 }
