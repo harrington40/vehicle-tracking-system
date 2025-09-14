@@ -49,20 +49,48 @@ pipeline {
         sh '''
           set -eux
           git --no-pager log -1 --pretty=oneline || true
-          # Make scripts executable immediately after checkout
-          chmod +x ci/use-node-18.sh || true
-          ls -la ci/use-node-18.sh || true
         '''
       }
     }
 
-    stage('Node 18 + install') {
+    stage('Node 18 Setup') {
       steps {
         sh '''
           set -eux
-          # Use bash to source the script instead of executing it directly
-          source ci/use-node-18.sh
+          # Check what's in the ci/ directory
+          ls -la ci/ || true
+          
+          # If the script exists, try to make it executable and run it
+          if [ -f "ci/use-node-18.sh" ]; then
+            echo "Found use-node-18.sh script, making it executable..."
+            chmod +x ci/use-node-18.sh
+            # Try to execute it directly
+            ./ci/use-node-18.sh || echo "Script execution failed, continuing with manual setup..."
+          fi
+          
+          # Manual Node.js setup as fallback
+          if ! command -v node >/dev/null 2>&1 || ! node --version | grep -q "v18"; then
+            echo "Setting up Node.js 18 manually..."
+            # Install Node.js 18 using nvm, fnm, or direct download
+            curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash || true
+            export NVM_DIR="$HOME/.nvm"
+            [ -s "$NVM_DIR/nvm.sh" ] && \\. "$NVM_DIR/nvm.sh"
+            nvm install 18 || true
+            nvm use 18 || true
+          fi
+          
+          echo "Node.js version:"
+          node --version || true
+          echo "npm version:"
+          npm --version || true
+        '''
+      }
+    }
 
+    stage('Install dependencies') {
+      steps {
+        sh '''
+          set -eux
           # Prefer yarn if present with yarn.lock, else npm
           if command -v yarn >/dev/null 2>&1 && [ -f yarn.lock ]; then
             if [ "${CLEAN_NODE_MODULES:-false}" = "true" ]; then rm -rf node_modules; fi
@@ -82,8 +110,6 @@ pipeline {
       steps {
         sh '''
           set -eux
-          # Use bash to source the script
-          source ci/use-node-18.sh
           npx expo --version || npx --yes @expo/cli --version
           # Safe if already generated; helps first-time builds
           npx expo prebuild --non-interactive || true
@@ -103,8 +129,6 @@ pipeline {
         ]) {
           sh '''
             set -eux
-            # Use bash to source the script
-            source ci/use-node-18.sh
             export APP_ENV="${ENV}"
 
             case "${ENV}" in
@@ -144,8 +168,6 @@ EOF2
       steps {
         sh '''
           set -eux
-          # Use bash to source the script
-          source ci/use-node-18.sh
           export APP_ENV="${ENV}"
           npx pod-install ios
 
@@ -178,8 +200,6 @@ EOF2
       steps {
         sh '''
           set -eux
-          # Use bash to source the script
-          source ci/use-node-18.sh
           export APP_ENV="${ENV}"
           npx expo export --platform web --output-dir "${WEB_OUT}"
           printf "User-agent: *\\nDisallow:\\n" > ${WEB_OUT}/robots.txt
@@ -204,8 +224,6 @@ EOF2
                                            usernameVariable: 'SSH_USER')]) {
           sh '''
             set -eux
-            # Use bash to source the script
-            source ci/use-node-18.sh
             export APP_ENV="${ENV}"
 
             case "${ENV}" in
