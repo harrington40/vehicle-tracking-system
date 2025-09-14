@@ -1,3 +1,64 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# ci_apply_fixes.sh
+# - Backs up and replaces Jenkinsfile + ci/use-node-18.sh with robust versions
+# - Removes corepack usage, uses Yarn via npm (with npm fallback)
+# - Makes sh steps POSIX friendly (no `set -o pipefail`)
+# Usage:
+#   chmod +x ci_apply_fixes.sh
+#   ./ci_apply_fixes.sh
+#   ./ci_apply_fixes.sh --commit   # will git add/commit the changes
+
+COMMIT=0
+if [[ "${1:-}" == "--commit" ]]; then COMMIT=1; fi
+
+ROOT="$(pwd)"
+mkdir -p ci
+
+backup_file() {
+  local f="$1"
+  if [[ -f "$f" ]]; then
+    cp -f "$f" "${f}.bak.$(date +%s)"
+    echo "Backed up $f -> ${f}.bak.<timestamp>"
+  fi
+}
+
+# --- Update ci/use-node-18.sh (no corepack; Yarn via npm) ---
+backup_file "ci/use-node-18.sh"
+cat > ci/use-node-18.sh <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Install/activate Node 18 with nvm
+export NVM_DIR="$HOME/.nvm"
+if [ ! -s "$NVM_DIR/nvm.sh" ]; then
+  # Install nvm (cached per agent HOME)
+  curl -fsSL https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+fi
+# shellcheck disable=SC1090
+. "$NVM_DIR/nvm.sh"
+
+nvm install 18 >/dev/null
+nvm use 18    >/dev/null
+
+node -v
+
+# Avoid Corepack to bypass locked egress to repo.yarnpkg.com
+# Install Yarn classic globally via npm; ignore failure and fallback to npm later
+if ! command -v yarn >/dev/null 2>&1; then
+  npm install -g yarn@1.22.22 || true
+fi
+
+# Show available package managers for logs
+(yarn -v || echo "yarn not available, will use npm")
+npm -v
+EOF
+chmod +x ci/use-node-18.sh
+
+# --- Write Jenkinsfile (POSIX sh; yarn/npm fallback; same stages) ---
+backup_file "Jenkinsfile"
+cat > Jenkinsfile <<'EOF'
 properties([
   parameters([
     choice(name: 'ENV', choices: ['test','staging','production'], description: 'Environment'),
@@ -288,3 +349,18 @@ EOS
     failure { echo "❌ Build failed" }
   }
 }
+EOF
+
+echo "✔ Wrote ci/use-node-18.sh and Jenkinsfile"
+
+if [[ $COMMIT -eq 1 ]]; then
+  if command -v git >/dev/null 2>&1; then
+    git add Jenkinsfile ci/use-node-18.sh || true
+    git commit -m "ci: robust Jenkinsfile + Node18 helper (no corepack; yarn via npm; POSIX sh)" || true
+    echo "✔ Committed changes. Run: git push"
+  else
+    echo "ℹ git not found; skipping commit."
+  fi
+fi
+
+echo "All set. Review diffs, push, then run the branch job in Jenkins."
