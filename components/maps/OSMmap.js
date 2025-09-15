@@ -22,7 +22,7 @@ export default function OSMMap({
   const demoVehicles = vehicles.length > 0 ? vehicles : [
     { id: 1, name: "Truck 101", latitude: 37.78825, longitude: -122.4324, status: "moving", speed: 65 },
     { id: 2, name: "Van 202", latitude: 37.78525, longitude: -122.4354, status: "stopped", speed: 0 },
-    { id: 3, name: "Car 303", latitude: 37.78925, longitude: -122.4224, status: "idle", speed: 5 },
+    { id: 3, name: "Car 305", latitude: 37.78925, longitude: -122.4224, status: "idle", speed: 5 },
   ];
   
   // Get marker color based on vehicle status
