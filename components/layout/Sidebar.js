@@ -4,49 +4,64 @@ import { Box, VStack, HStack, Text, Icon, Pressable, Badge, Divider } from "nati
 import { Ionicons } from "@expo/vector-icons";
 import { useLayout } from "./LayoutContext";
 import { COLORS } from "../../lib/theme";
+import { useAuth } from "../../lib/authContext";
 
-// Updated navigation for vehicle tracking app
-const NAV_SECTIONS = [
-  {
-    title: null, // Main navigation (no title)
-    items: [
-      { href: "/", label: "Dashboard", icon: "speedometer-outline" },
-      { href: "/vehicles", label: "Vehicles", icon: "car-outline", badge: "12" },
-    ]
-  },
-  {
-    title: "TRACKING",
-    items: [
-      { href: "/live-tracking", label: "Live Tracking", icon: "location-outline" },
-      { href: "/routes", label: "Routes", icon: "map-outline" },
-      { href: "/geofences", label: "Geofences", icon: "radio-button-on-outline" },
-      { href: "/history", label: "Trip History", icon: "time-outline" },
-    ]
-  },
-  {
-    title: "FLEET MANAGEMENT",
-    items: [
-      { href: "/drivers", label: "Drivers", icon: "people-outline" },
-      { href: "/maintenance", label: "Maintenance", icon: "build-outline" },
-      { href: "/fuel", label: "Fuel Management", icon: "water-outline" },
-      { href: "/reports", label: "Reports", icon: "document-text-outline" },
-    ]
-  },
-  {
-    title: "ALERTS & SETTINGS",
-    items: [
-      { href: "/alerts", label: "Alerts", icon: "notifications-outline", badge: "3" },
-      { href: "/settings", label: "Settings", icon: "settings-outline" },
-      { href: "/user-management", label: "User Management", icon: "person-outline" }, // Add this
-      { href: "/users", label: "User Management", icon: "person-outline" },
-      { href: "/billing", label: "Billing", icon: "card-outline" },
-    ]
+
+function buildSections(session) {
+  if (!session) {
+    return [{
+      title: null,
+      items: [
+        
+        { href: "/loginPage", label: "Login", icon: "log-in-outline" }
+      ]
+    }];
   }
-];
+  return [
+    {
+      title: null,
+      items: [
+        { href: "/", label: "Landing", icon: "home-outline" },
+        { href: "/dashboard", label: "Dashboard", icon: "speedometer-outline" },
+        { href: "/vehicles", label: "Vehicles", icon: "car-outline", badge: "12" }
+      ]
+    },
+    {
+      title: "TRACKING",
+      items: [
+        { href: "/live-tracking", label: "Live Tracking", icon: "location-outline" },
+        { href: "/routes", label: "Routes", icon: "map-outline" },
+        { href: "/geofences", label: "Geofences", icon: "radio-button-on-outline" },
+        { href: "/history", label: "Trip History", icon: "time-outline" }
+      ]
+    },
+    {
+      title: "FLEET MANAGEMENT",
+      items: [
+        { href: "/drivers", label: "Drivers", icon: "people-outline" },
+        { href: "/maintenance", label: "Maintenance", icon: "build-outline" },
+        { href: "/fuel", label: "Fuel Management", icon: "water-outline" },
+        { href: "/reports", label: "Reports", icon: "document-text-outline" }
+      ]
+    },
+    {
+      title: "ALERTS & SETTINGS",
+      items: [
+        { href: "/alerts", label: "Alerts", icon: "notifications-outline", badge: "3" },
+        { href: "/settings", label: "Settings", icon: "settings-outline" },
+        { href: "/profilePage", label: "Manager", icon: "person-outline" },
+        { href: "/user-management", label: "User Management", icon: "person-outline" },
+        { href: "/billing", label: "Billing", icon: "card-outline" }
+      ]
+    }
+  ];
+}
 
 export default function Sidebar() {
   const pathname = usePathname();
   const { collapsed } = useLayout?.() || { collapsed: false };
+   const { session, logout } = useAuth();
+  const sections = buildSections(session);
 
   const W = collapsed ? "80px" : "240px";
 
@@ -86,7 +101,7 @@ export default function Sidebar() {
         overflow="auto"
         py={4}
       >
-        {NAV_SECTIONS.map((section, sIndex) => (
+        {sections.map((section, sIndex) => (
           <VStack key={sIndex} mt={sIndex > 0 ? 6 : 2} space={1} px={collapsed ? 2 : 2}>
             {/* Section Title */}
             {section.title && !collapsed && (

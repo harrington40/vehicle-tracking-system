@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { View, Text, StyleSheet, Pressable, ScrollView, useWindowDimensions, Image } from "react-native";
 import { COLORS, SPACING } from "../lib/theme";
 import Container from "../components/layout/Container";
@@ -8,8 +8,7 @@ import BarMini from "../components/charts/BarMini";
 import Chip from "../components/ui/Chip";
 import ProgressBar from "../components/ui/ProgressBar";
 import RingProgress from "../components/ui/RingProgress";
-// Replace the web-specific import with cross-platform MapView
-import MapView from '../components/maps/MapView'; // ← Updated import
+import MapView from "../components/maps/MapView"; // Import the cross-platform MapView component
 import Button from '../components/ui/Button';
 import Header from '../components/layout/Header';
 import { Link, useRouter } from "expo-router";
@@ -17,32 +16,91 @@ import { Ionicons } from "@expo/vector-icons";
 import NestedTableRN from '../components/nested-table/NestedTableRN';
 import { LinearGradient } from 'expo-linear-gradient';
 
-/**
- * Dashboard Component
- * ------------------
- * Main dashboard view with uniformly sized and spaced cards
- */
+// Geofence additions
+import GeofenceLayer from "../components/geoFence/geofenceLayer.js";
+import GeofenceEventList from "../components/geoFence/geofenceEventList.js";
+import { GeofenceService } from "../lib/geofence/geofenceService.js";
+import { createCircle, createPolygon } from "../lib/geofence/model.js";
+import { useGeofenceEvents } from "../hooks/geofence/useGeofenceEvent.js";
+
+import { useAuth } from "../lib/authContext";
+
+// Initialize geofence service
+const geofenceService = new GeofenceService();
+
 export default function Dashboard() {
   // Maximum content width in pixels
   const MAX = 1280;
   const { width } = useWindowDimensions();
   const router = useRouter();
-  
-  // Calculate card dimensions and layout
-  const cardSpacing = 16; // Space between cards
-  const containerPadding = 16; // Padding on container sides
-  const availableWidth = Math.min(width - (containerPadding * 2), MAX);
+  const { session, loading } = useAuth();
 
-  // Demo vehicle data for the map
+  // Demo vehicle data for the map - MOVE THIS UP before any useEffect that uses it
   const liveVehicleData = [
     { id: 1, name: "Truck 101", latitude: 37.78825, longitude: -122.4324, status: "moving", speed: 65 },
     { id: 2, name: "Van 202", latitude: 37.78525, longitude: -122.4354, status: "stopped", speed: 0 },
     { id: 3, name: "Car 303", latitude: 37.78925, longitude: -122.4224, status: "idle", speed: 5 },
     { id: 4, name: "Delivery 404", latitude: 37.79025, longitude: -122.4124, status: "moving", speed: 45 },
   ];
-  
 
-// Demo vehicle tracking data for the NestedTableRN
+  // Geofence events hook
+  const geofenceEvents = useGeofenceEvents();
+  const [webMap, setWebMap] = useState(null); // Add this for the map reference
+
+  // Load sample geofences once (circle + polygon example)
+  useEffect(() => {
+    geofenceService.load([
+      createCircle({
+        id: 'hq-yard',
+        name: 'HQ Yard',
+        center: { lat: 37.78825, lng: -122.4324 },
+        radiusMeters: 400,
+        color: '#16a34a'
+      }),
+      createPolygon({
+        id: 'corridor-1',
+        name: 'Downtown Zone',
+        coordinates: [
+          [37.7875, -122.4400],
+          [37.7920, -122.4385],
+          [37.7932, -122.4288],
+          [37.7890, -122.4250],
+          [37.7852, -122.4302],
+        ],
+        color: '#dc2626'
+      })
+    ]);
+  }, []);
+
+  // Evaluate static positions (replace with real-time feed for production)
+  useEffect(() => {
+    const now = Date.now();
+    liveVehicleData.forEach(v => {
+      geofenceService.evaluateLocation({
+        id: v.id,
+        lat: v.latitude,
+        lng: v.longitude,
+        speedKph: v.speed,
+        timestamp: now
+      });
+    });
+  }, [liveVehicleData]);
+
+  // Placeholder while checking / redirecting
+  if (loading || !session) {
+    return (
+      <View style={{ flex:1, alignItems:"center", justifyContent:"center", backgroundColor:"#f5f7fa" }}>
+        <Text style={{ color:"#64748b" }}>Authenticating...</Text>
+      </View>
+    );
+  }
+  
+  // Calculate card dimensions and layout
+  const cardSpacing = 16; // Space between cards
+  const containerPadding = 16; // Padding on container sides
+  const availableWidth = Math.min(width - (containerPadding * 2), MAX);
+
+  // Demo vehicle tracking data for the NestedTableRN - FIXED incomplete array
   const vehicleTrackingData = [
     {
       id: 1,
@@ -167,7 +225,22 @@ export default function Dashboard() {
                 zoom: 13
               }}
               showControls={true}
-            />
+               onWebMapReady={setWebMap} 
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            >
+                <GeofenceLayer geofences={geofenceService.geofences} map={webMap} />
+            </MapView>
           </DashboardCard>
         </CardGrid>
 
@@ -495,6 +568,12 @@ function NavButton({ href, label }) {
     </Link>
   );
 }
+
+
+
+
+
+
 
 /**
  * Component Styles
